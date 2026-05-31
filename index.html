@@ -1475,6 +1475,8 @@ function openAchModal(){
     <div class="m-sub">общая мечта</div>
     <label>Что хотим сделать</label>
     <input type="text" id="ach-title" placeholder="Покататься на катере на закате" maxlength="90">
+    <label>Категория</label>
+    <select id="ach-cat"><option value="Остальное">Остальное</option><option value="Поцелуи">Поцелуи</option></select>
     <label>Иконка</label>
     <div class="icon-picker">${opts}</div>
     <div class="modal-actions">
@@ -1486,7 +1488,8 @@ function openAchModal(){
 function selIcon(el,k){_selIcon=k;document.querySelectorAll('.icon-opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');}
 function saveAch(){
   const t=document.getElementById('ach-title').value.trim();
-  const c='Остальное';
+  const cs=document.getElementById('ach-cat');
+  const c=(cs&&cs.value)||'Остальное';
   if(!t)return;
   const ca=getCustomAchs();
   ca.push({id:'c'+Date.now(),title:t,cat:c,svg:_selIcon});
