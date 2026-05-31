@@ -956,8 +956,11 @@ function streak(who){
   for(let i=0;i<365;i++){
     const dd=new Date(n);dd.setDate(dd.getDate()-i);
     const v=ld(dk(dd.getFullYear(),dd.getMonth(),dd.getDate()),{d:false,o:false});
-    if(who==='d'&&!v.d)break;
-    if(who==='o'&&!v.o)break;
+    const ok=who==='d'?v.d:v.o;
+    if(!ok){
+      if(i===0)continue; // сегодня ещё не отмечено — стрик не рвётся
+      break;             // пропуск в прошлом — стрик обнуляется
+    }
     s++;
   }
   return s;
