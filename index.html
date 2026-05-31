@@ -1188,15 +1188,16 @@ function renderLetters(){
     const unlocked=ud<=now;
     const card=document.createElement('div');
     card.className='envelope cv-'+(l.cover||'classic')+(unlocked?' unlocked':' locked');
+    const delBtn=`<button class="env-del" title="Удалить" onclick="delLetter(event,'${l.id}')">×</button>`;
     if(unlocked){
-      card.innerHTML=`
+      card.innerHTML=delBtn+`
         <div class="env-from">от ${esc(l.from)}</div>
         <div class="env-wax">О<small style="font-size:11px">&</small>Д</div>
         <div class="env-preview">${esc(l.text)}</div>
         <div class="env-open-hint">нажми, чтобы прочитать →</div>`;
-      card.onclick=()=>readLetter(l.id);
+      card.onclick=(e)=>{if(e.target.closest('.env-del'))return;readLetter(l.id);};
     }else{
-      card.innerHTML=`
+      card.innerHTML=delBtn+`
         <div class="env-from">от ${esc(l.from)}</div>
         <div class="env-wax">🔒</div>
         <div class="env-status"><span class="env-locked-ico">✦</span> Откроется ${ud.getDate()} ${MRG[ud.getMonth()]} ${ud.getFullYear()}</div>`;
