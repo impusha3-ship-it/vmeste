@@ -564,8 +564,26 @@ body::before{background:transparent!important;}
 .cy-access b{font-size:clamp(26px,7vw,62px);letter-spacing:0.18em;}
 .cy-access span{font-family:'JetBrains Mono',monospace;letter-spacing:0.35em;font-size:13px;opacity:0.85;}
 
-/* fix: long unbreakable words pushed the tick out of the card */
-.ach-text{min-width:0!important;overflow-wrap:anywhere;word-break:break-word;}
+/* long words: keep whole, shrink font to fit (JS) instead of breaking */
+.ach-text{min-width:0!important;overflow-wrap:normal!important;word-break:keep-all!important;}
+
+/* cyberpunk HUD hexagon frame + neon glow on achievement icons */
+.ach-icon{width:46px!important;height:46px;display:flex;align-items:center;justify-content:center;position:relative;}
+.ach-icon::before{content:'';position:absolute;inset:3px;border:1px solid var(--border2);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);transition:border-color .3s,box-shadow .3s,background .3s;}
+.ach-icon svg{filter:drop-shadow(0 0 4px rgba(0,240,255,0.75));position:relative;z-index:1;}
+.ach-card:hover .ach-icon::before{border-color:var(--gold);box-shadow:0 0 12px -2px rgba(0,240,255,0.7);}
+.ach-card.done .ach-icon::before{border-color:var(--gold);background:rgba(0,240,255,0.10);box-shadow:0 0 10px -3px rgba(0,240,255,0.6);}
+
+/* youtube audio mini-player */
+.track-play{flex-shrink:0;width:46px;height:46px;border-radius:50%;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:15px;cursor:pointer;box-shadow:0 0 12px -3px rgba(0,240,255,0.7);transition:all .2s;}
+.track-play:hover{background:var(--gold);color:#04121a;box-shadow:0 0 20px rgba(0,240,255,0.9);}
+.track.playing .track-play{background:var(--gold);color:#04121a;}
+.yt-host{position:fixed;left:-9999px;top:0;width:320px;height:180px;pointer-events:none;opacity:0;}
+.eq{display:none;gap:3px;align-items:flex-end;height:14px;margin-top:5px;}
+.track.playing .eq{display:flex;}
+.eq i{width:3px;background:var(--gold);box-shadow:0 0 6px var(--gold);animation:eqbar .8s ease-in-out infinite;}
+.eq i:nth-child(2){animation-delay:.18s}.eq i:nth-child(3){animation-delay:.36s}.eq i:nth-child(4){animation-delay:.1s}
+@keyframes eqbar{0%,100%{height:4px}50%{height:14px}}
 
 /* glitch on hover (RGB split) */
 @keyframes hoverGlitch{0%,100%{filter:none}20%{filter:drop-shadow(2px 0 rgba(255,42,109,0.85)) drop-shadow(-2px 0 rgba(0,240,255,0.85))}40%{filter:drop-shadow(-2px 0 rgba(255,42,109,0.85)) drop-shadow(2px 0 rgba(0,240,255,0.85))}60%{filter:drop-shadow(1px 0 rgba(255,42,109,0.6)) drop-shadow(-1px 0 rgba(0,240,255,0.6))}}
@@ -1310,6 +1328,7 @@ function delPhoto(e,id){
 /* ===== MUSIC ===== */
 function ytId(u){const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([\w-]{11})/);return m?m[1]:null;}
 function renderMusic(){
+  for(var k in _players){try{_players[k].destroy();}catch(e){}}_players={};
   const list=ld('tracks',[]).slice().sort((a,b)=>b.ts-a.ts);
   const cont=document.getElementById('music-list');
   if(!list.length){cont.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// плейлист пуст — добавьте первый трек</div>`;return;}
@@ -1318,20 +1337,45 @@ function renderMusic(){
     const id=ytId(t.url);
     const el=document.createElement('div');el.className='track';
     if(id){
-      el.innerHTML=`<div class="track-thumb" style="background-image:url(https://img.youtube.com/vi/${id}/hqdefault.jpg)" data-yt="${id}"></div>
-        <div class="track-meta"><div class="track-info"><div class="track-title">${esc(t.title||'Без названия')}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}</div>
-        <button class="track-del" onclick="delTrack('${t.id}')">×</button></div>`;
-      el.querySelector('.track-thumb').onclick=function(){
-        const f=document.createElement('iframe');
-        f.src=`https://www.youtube.com/embed/${id}?autoplay=1`;f.allow='autoplay; encrypted-media';f.allowFullscreen=true;
-        this.replaceWith(f);
-      };
+      el.innerHTML=`<div class="track-meta">
+          <button class="track-play" data-id="${t.id}" onclick="togglePlay('${t.id}','${id}')">▶</button>
+          <div class="track-info"><div class="track-title">${esc(t.title||'Без названия')}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}
+            <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></div></div>
+          <button class="track-del" onclick="delTrack('${t.id}')">×</button>
+        </div>
+        <div class="yt-host" id="yth-${t.id}"></div>`;
     } else {
       el.innerHTML=`<div class="track-meta"><div class="track-info"><div class="track-title">${esc(t.title||t.url)}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}</div>
         <button class="track-del" onclick="delTrack('${t.id}')">×</button></div>
         <a class="track-open" href="${esc(t.url)}" target="_blank" rel="noopener">Открыть ссылку ↗</a>`;
     }
     cont.appendChild(el);
+  });
+}
+/* ---- YouTube IFrame API: audio-only mini player (hidden video, low quality) ---- */
+var _ytReady=false,_ytQ=[],_players={};
+window.onYouTubeIframeAPIReady=function(){_ytReady=true;_ytQ.forEach(f=>f());_ytQ=[];};
+function ensureYT(cb){
+  if(_ytReady){cb();return;}
+  _ytQ.push(cb);
+  if(!document.getElementById('yt-api')){var s=document.createElement('script');s.id='yt-api';s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);}
+}
+function setPlayUI(tid,on){var b=document.querySelector('.track-play[data-id="'+tid+'"]');if(!b)return;b.textContent=on?'⏸':'▶';var tr=b.closest('.track');if(tr)tr.classList.toggle('playing',on);}
+function stopOthers(keep){for(var k in _players){if(k!==keep){try{_players[k].pauseVideo();}catch(e){}setPlayUI(k,false);}}}
+function togglePlay(tid,vid){
+  ensureYT(function(){
+    if(!_players[tid]){
+      _players[tid]=new YT.Player('yth-'+tid,{videoId:vid,playerVars:{autoplay:1,controls:0,playsinline:1},events:{
+        onReady:function(e){try{e.target.setPlaybackQuality('small');}catch(_){}stopOthers(tid);e.target.playVideo();setPlayUI(tid,true);},
+        onStateChange:function(e){var Y=YT.PlayerState;
+          if(e.data===Y.PLAYING){try{e.target.setPlaybackQuality('small');}catch(_){}setPlayUI(tid,true);}
+          else if(e.data===Y.PAUSED||e.data===Y.ENDED){setPlayUI(tid,false);}}
+      }});
+      return;
+    }
+    var pl=_players[tid],st=pl.getPlayerState();
+    if(st===YT.PlayerState.PLAYING){pl.pauseVideo();setPlayUI(tid,false);}
+    else{stopOthers(tid);try{pl.setPlaybackQuality('small');}catch(_){}pl.playVideo();setPlayUI(tid,true);}
   });
 }
 function openTrackModal(){
@@ -1399,6 +1443,14 @@ function renderAch(){
     sec.appendChild(gr);cont.appendChild(sec);
   });
   document.getElementById('ach-count').textContent=comp+' из '+tot;
+  requestAnimationFrame(fitAchTexts);
+}
+function fitAchTexts(){
+  document.querySelectorAll('#ach-list .ach-text').forEach(function(el){
+    el.style.fontSize='';
+    var size=parseFloat(getComputedStyle(el).fontSize)||17, guard=0;
+    while(el.scrollWidth>el.clientWidth+1 && size>11 && guard<24){ size-=0.5; el.style.fontSize=size+'px'; guard++; }
+  });
 }
 let _selIcon='a9';
 function openAchModal(){
