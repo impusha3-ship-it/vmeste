@@ -564,6 +564,18 @@ body::before{background:transparent!important;}
 .cy-access b{font-size:clamp(26px,7vw,62px);letter-spacing:0.18em;}
 .cy-access span{font-family:'JetBrains Mono',monospace;letter-spacing:0.35em;font-size:13px;opacity:0.85;}
 
+/* fix: long unbreakable words pushed the tick out of the card */
+.ach-text{min-width:0!important;overflow-wrap:anywhere;word-break:break-word;}
+
+/* glitch on hover (RGB split) */
+@keyframes hoverGlitch{0%,100%{filter:none}20%{filter:drop-shadow(2px 0 rgba(255,42,109,0.85)) drop-shadow(-2px 0 rgba(0,240,255,0.85))}40%{filter:drop-shadow(-2px 0 rgba(255,42,109,0.85)) drop-shadow(2px 0 rgba(0,240,255,0.85))}60%{filter:drop-shadow(1px 0 rgba(255,42,109,0.6)) drop-shadow(-1px 0 rgba(0,240,255,0.6))}}
+.ach-card:hover,.pcard:hover,.ev-card:hover,.stat-cell:hover,.tg-ms:hover,.envelope:hover,.nav-tab:hover{animation:hoverGlitch 0.4s steps(2,end) 1;}
+
+/* data-rain + neon cursor trail */
+#cy-rain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.16;}
+.cy-trail{position:fixed;z-index:9990;pointer-events:none;width:8px;height:8px;border-radius:50%;background:#00f0ff;box-shadow:0 0 10px #00f0ff,0 0 20px rgba(0,240,255,0.6);transform:translate(-50%,-50%);will-change:transform,opacity;}
+@media(prefers-reduced-motion:reduce){#cy-rain{display:none!important}.cy-trail{display:none!important}}
+
 @media(max-width:600px){.cy-boot{font-size:11px;min-height:110px;}}
 </style>
 </head>
@@ -1393,7 +1405,7 @@ function confetti(x,y){
     var li=0,ci=0,txt='';
     (function type(){
       if(li>=lines.length){boot.textContent=txt.replace(/\n$/,'');return;}
-      if(ci<=lines[li].length){boot.textContent=txt+lines[li].slice(0,ci)+'▍';ci++;setTimeout(type,26);}
+      if(ci<=lines[li].length){boot.textContent=txt+lines[li].slice(0,ci)+'▍';ci++;window.__cyBlip&&window.__cyBlip();setTimeout(type,26);}
       else{txt+=lines[li]+'\n';li++;ci=0;setTimeout(type,240);}
     })();
   }
@@ -1418,6 +1430,99 @@ function confetti(x,y){
   if(btn) btn.addEventListener('click',afterAuth);
   var pwd=document.getElementById('pwd');
   if(pwd) pwd.addEventListener('keydown',function(e){if(e.key==='Enter')afterAuth();});
+})();
+</script>
+
+<!-- ===== CYBERPUNK FX II: sound, decrypt, rain, trail ===== -->
+<script>
+(function(){
+  var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---- sound (reuses global actx/tone/soundOn from main script) ---- */
+  function on(){return !window.soundOn || window.soundOn();}
+  function beep(freq,dur,type,peak,when){
+    if(!on()||!window.actx||!window.tone)return;
+    var c=window.actx(); if(!c)return; if(c.state==='suspended')c.resume();
+    window.tone(c,freq,when||0,dur||0.05,type||'square',peak||0.06);
+  }
+  window.__cyBlip=function(){ beep(1100+Math.random()*350,0.022,'square',0.035); };
+
+  // typing blip on access-code entry
+  var pwd=document.getElementById('pwd');
+  if(pwd) pwd.addEventListener('keydown',function(e){
+    if((e.key&&e.key.length===1)||e.key==='Backspace') beep(900+Math.random()*250,0.03,'square',0.05);
+  });
+  // access beep/buzz
+  var btn=document.querySelector('.login-btn');
+  function authBeep(){
+    setTimeout(function(){
+      var app=document.getElementById('app');
+      if(app&&getComputedStyle(app).display!=='none'){ beep(660,0.09,'square',0.07); beep(990,0.14,'square',0.07,0.10); }
+      else { beep(150,0.20,'sawtooth',0.09); }
+    },45);
+  }
+  if(btn) btn.addEventListener('click',authBeep);
+  if(pwd) pwd.addEventListener('keydown',function(e){if(e.key==='Enter')authBeep();});
+
+  /* ---- decrypt / scramble numbers ---- */
+  var CH='アイウエオカキクケサシスセタチツ0123456789#%&@<>/';
+  function scramble(el){
+    if(!el||el.children.length)return;
+    var fin=el.textContent; if(!fin)return;
+    var frame=0,max=13; clearInterval(el._sc);
+    el._sc=setInterval(function(){
+      var s='',cut=(frame/max)*fin.length;
+      for(var i=0;i<fin.length;i++){
+        if(fin[i]===' '){s+=' ';continue;}
+        s+= i<cut ? fin[i] : CH[Math.floor(Math.random()*CH.length)];
+      }
+      el.textContent=s;
+      if(++frame>max){clearInterval(el._sc);el.textContent=fin;}
+    },34);
+  }
+  function decryptIn(root){
+    if(!root)return;
+    root.querySelectorAll('.tg-ms-val,.ev-count,.ach-count,#tg-days').forEach(scramble);
+  }
+  if(window.showPage && !window.__cyWrap){
+    window.__cyWrap=true;
+    var _sp=window.showPage;
+    window.showPage=function(id,b){ _sp(id,b); setTimeout(function(){decryptIn(document.getElementById('page-'+id));},30); };
+  }
+
+  /* ---- data rain ---- */
+  if(!reduced){
+    var cv=document.createElement('canvas'); cv.id='cy-rain'; document.body.appendChild(cv);
+    var cx=cv.getContext('2d'), FS=14, cols, drops;
+    function rs(){ cv.width=innerWidth; cv.height=innerHeight; cols=Math.floor(cv.width/FS); drops=new Array(cols); for(var i=0;i<cols;i++)drops[i]=Math.random()*-60; }
+    rs(); addEventListener('resize',rs);
+    var GL='アイウエオカキクケコサシスセソタチツ0123456789';
+    (function draw(){
+      cx.fillStyle='rgba(6,7,13,0.10)'; cx.fillRect(0,0,cv.width,cv.height);
+      cx.font=FS+'px monospace';
+      for(var i=0;i<cols;i++){
+        var ch=GL[Math.floor(Math.random()*GL.length)], x=i*FS, y=drops[i]*FS;
+        cx.fillStyle = Math.random()<0.5 ? 'rgba(0,240,255,0.85)' : 'rgba(5,255,161,0.7)';
+        cx.fillText(ch,x,y);
+        if(y>cv.height && Math.random()>0.975) drops[i]=0;
+        drops[i]+=0.5;
+      }
+      requestAnimationFrame(draw);
+    })();
+  }
+
+  /* ---- neon cursor trail ---- */
+  if(!reduced && window.matchMedia && matchMedia('(pointer:fine)').matches){
+    var last=0;
+    addEventListener('mousemove',function(e){
+      var now=performance.now(); if(now-last<22)return; last=now;
+      var d=document.createElement('div'); d.className='cy-trail';
+      d.style.left=e.clientX+'px'; d.style.top=e.clientY+'px';
+      document.body.appendChild(d);
+      d.animate([{opacity:0.8,transform:'translate(-50%,-50%) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) scale(0.2)'}],
+        {duration:600,easing:'ease-out'}).onfinish=function(){d.remove();};
+    },{passive:true});
+  }
 })();
 </script>
 </body>
