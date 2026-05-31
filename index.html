@@ -897,9 +897,9 @@ function evCardHTML(ev,now){
   const soon=diff>=0&&diff<=14;
   const dateStr=`${ed.getDate()} ${MRG[ed.getMonth()]} ${ed.getFullYear()}`;
   let countTxt, tag;
-  if(passed){countTxt=Math.abs(diff);tag=plural(Math.abs(diff),'день','дня','дней')+' назад';}
+  if(passed){const n=Math.abs(diff);countTxt=n;tag=n+' '+plural(n,'день','дня','дней')+' назад';}
   else if(diff===0){countTxt='🎉';tag='сегодня';}
-  else {countTxt=diff;tag='через '+plural(diff,'день','дня','дней');}
+  else {countTxt=diff;tag='через '+diff+' '+plural(diff,'день','дня','дней');}
   return `<div class="ev-card${soon?' soon':''}${passed?' ev-passed':''}">
       <div class="ev-count">${countTxt}</div>
       <div class="ev-mid">
