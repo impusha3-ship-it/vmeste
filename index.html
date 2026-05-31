@@ -296,6 +296,11 @@ h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
 .ach-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--shadow-lift);}
 .ach-card:hover::after{width:100%;}
 .ach-card.done{background:linear-gradient(135deg, rgba(212,184,122,0.34) 0%, rgba(184,151,90,0.20) 100%);border-color:var(--gold);box-shadow:0 2px 6px rgba(61,54,40,0.06), 0 14px 32px -16px rgba(184,151,90,0.6);}
+.ach-auto{cursor:default;border-style:dashed!important;}
+.ach-auto-badge{position:absolute;top:6px;left:8px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;color:var(--ink4);border:1px solid var(--border2);padding:2px 6px;border-radius:3px;z-index:3;}
+.ach-card.done.ach-auto{border-style:solid!important;animation:autoGlow 2.6s ease-in-out infinite;}
+.ach-card.done .ach-auto-badge{color:#04121a;background:var(--gold);border-color:var(--gold);}
+@keyframes autoGlow{0%,100%{box-shadow:0 0 0 1px var(--gold),0 0 14px -3px rgba(0,240,255,0.5)}50%{box-shadow:0 0 0 1px var(--gold),0 0 24px -2px rgba(0,240,255,0.9)}}
 .ach-card.done::after{width:100%;height:2px;}
 .ach-card.done::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--gold-light),var(--gold));z-index:2;}
 .ach-card.done .ach-text{color:var(--ink);}
@@ -825,7 +830,7 @@ const ACHS=[
   {id:'a26',icon:'⛰️',title:'Сходить на гору ночью',cat:'Вместе'},
   {id:'a27',icon:'🌃',title:'Переночевать в Уссурийске у Кати',cat:'Путешествия'},
   {id:'a28',icon:'🌏',title:'Поехать в Новую Зеландию',cat:'Путешествия'},
-  {id:'a29',icon:'🔥',title:'30 дней подряд держать стрик зарядки и таблеток',cat:'Спорт'},
+  {id:'a29',icon:'🔥',title:'30 дней подряд держать стрик зарядки и таблеток',cat:'Остальное',auto:true},
   {id:'a30',title:'Посетить Кронштадт',cat:'Города',svg:'c_kron'},
   {id:'a31',title:'Посетить Калининград',cat:'Города',svg:'c_kali'},
   {id:'a32',title:'Посетить Выборг',cat:'Города',svg:'c_vyb'},
@@ -1005,6 +1010,27 @@ function renderCal(){
   document.getElementById('so').innerHTML=so+'<span>дней подряд</span>';
   document.getElementById('pcard-d').classList.toggle('hot',sd>=3);
   document.getElementById('pcard-o').classList.toggle('hot',so>=3);
+  checkStreakAch(sd,so);
+}
+/* auto-unlock a29 when both streaks >=30 */
+function checkStreakAch(sd,so){
+  const done=ld('ach',{});
+  const reach=Math.min(sd,so)>=30;
+  if(reach && !done.a29){
+    done.a29=true;sv('ach',done);
+    syncCompleteFx();
+    try{const a=document.getElementById('page-achievements');if(a&&a.classList.contains('active'))renderAch();}catch(e){}
+  } else if(!reach && done.a29){
+    delete done.a29;sv('ach',done);
+  }
+}
+function syncCompleteFx(){
+  if(window.playAch)playAch();
+  if(window.confetti){const W=innerWidth;for(let i=0;i<6;i++)setTimeout(()=>confetti(W*(0.2+Math.random()*0.6),innerHeight*0.25),i*140);}
+  const o=document.createElement('div');o.className='cy-access grant';
+  o.innerHTML='<b>SYNC COMPLETE</b><span>30 ДНЕЙ ВМЕСТЕ · СТРИК ВЫПОЛНЕН</span>';
+  document.body.appendChild(o);
+  o.animate([{opacity:0},{opacity:1},{opacity:1},{opacity:0}],{duration:2600,easing:'ease'}).onfinish=()=>o.remove();
 }
 /* ===== SOUND (Web Audio, device-local mute) ===== */
 let _audio;
@@ -1444,10 +1470,12 @@ function renderAch(){
     items.forEach(a=>{
       tot++;if(done[a.id])comp++;
       const c=document.createElement('div');
-      c.className='ach-card'+(done[a.id]?' done':'');
+      c.className='ach-card'+(done[a.id]?' done':'')+(a.auto?' ach-auto':'');
       const delBtn=String(a.id).startsWith('c')?`<button class="ach-del" title="Удалить" onclick="delAch(event,'${a.id}')">×</button>`:'';
-      c.innerHTML=`${delBtn}<div class="ach-icon">${achIcon(a)}</div><div class="ach-text">${esc(a.title)}</div><div class="ach-tick">✓</div>`;
+      const badge=a.auto?`<div class="ach-auto-badge">${done[a.id]?'★ SYNC':'⚷ AUTO'}</div>`:'';
+      c.innerHTML=`${delBtn}${badge}<div class="ach-icon">${achIcon(a)}</div><div class="ach-text">${esc(a.title)}</div><div class="ach-tick">✓</div>`;
       c.onclick=(e)=>{
+        if(a.id==='a29'){return;} // auto-only: unlock by 30-day streak
         const d2=ld('ach',{});const willDo=!d2[a.id];d2[a.id]=willDo;sv('ach',d2);renderAch();
         if(willDo){const r=c.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2);playAch();}
       };
