@@ -576,6 +576,37 @@ body::before{background:transparent!important;}
 .cy-trail{position:fixed;z-index:9990;pointer-events:none;width:8px;height:8px;border-radius:50%;background:#00f0ff;box-shadow:0 0 10px #00f0ff,0 0 20px rgba(0,240,255,0.6);transform:translate(-50%,-50%);will-change:transform,opacity;}
 @media(prefers-reduced-motion:reduce){#cy-rain{display:none!important}.cy-trail{display:none!important}}
 
+/* ===== PHOTOS ===== */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.photo-card{position:relative;aspect-ratio:1;overflow:hidden;border:1px solid var(--border2);background:#0a1016;cursor:pointer;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));transition:border-color .25s,box-shadow .3s;}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.15) contrast(1.05);transition:transform .5s;}
+.photo-card:hover{border-color:var(--gold);box-shadow:0 0 18px -4px rgba(0,240,255,0.6);}
+.photo-card:hover img{transform:scale(1.07);}
+.photo-cap{position:absolute;left:0;right:0;bottom:0;padding:7px 9px;font-size:11px;letter-spacing:0.03em;color:var(--ink);background:linear-gradient(transparent,rgba(4,8,14,0.92));font-family:'JetBrains Mono',monospace;}
+.photo-by{color:var(--gold);}
+.photo-del{position:absolute;top:6px;right:8px;background:rgba(4,8,14,0.7);border:1px solid var(--border2);color:var(--ink3);width:24px;height:24px;line-height:1;cursor:pointer;opacity:0;transition:opacity .2s,color .2s;z-index:2;}
+.photo-card:hover .photo-del{opacity:1;}
+.photo-del:hover{color:var(--rose);border-color:var(--rose);}
+.lightbox-img{max-width:100%;max-height:72vh;display:block;margin:0 auto;border:1px solid var(--border2);box-shadow:0 0 30px -6px rgba(0,240,255,0.5);}
+
+/* ===== MUSIC ===== */
+.music-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.track{border:1px solid var(--border2);background:rgba(10,16,26,0.74);position:relative;overflow:hidden;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));transition:border-color .25s,box-shadow .3s;}
+.track:hover{border-color:var(--gold);box-shadow:0 0 20px -5px rgba(0,240,255,0.55);}
+.track-thumb{position:relative;aspect-ratio:16/9;background:#05080e center/cover no-repeat;cursor:pointer;display:block;}
+.track-thumb::after{content:'▶';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;background:rgba(4,8,14,0.35);text-shadow:0 0 16px rgba(0,240,255,0.9);transition:background .25s,transform .25s;}
+.track-thumb:hover::after{background:rgba(4,8,14,0.15);transform:scale(1.06);}
+.track iframe{width:100%;aspect-ratio:16/9;display:block;border:0;}
+.track-meta{padding:0.9rem 1rem;display:flex;align-items:center;gap:0.6rem;}
+.track-info{flex:1;min-width:0;}
+.track-title{font-family:'Tektur',sans-serif;font-size:16px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.track-by{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-top:2px;}
+.track-open{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);border:1px solid var(--border2);padding:0.5rem 0.8rem;text-decoration:none;display:inline-block;margin:0 1rem 1rem;transition:all .2s;}
+.track-open:hover{border-color:var(--gold);box-shadow:0 0 12px -3px rgba(0,240,255,0.7);}
+.track-del{background:none;border:none;color:var(--ink4);font-size:16px;cursor:pointer;padding:4px;transition:color .2s;}
+.track-del:hover{color:var(--rose);}
+.upload-hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink4);margin-top:6px;}
+
 @media(max-width:600px){.cy-boot{font-size:11px;min-height:110px;}}
 </style>
 </head>
@@ -604,6 +635,8 @@ body::before{background:transparent!important;}
       <button class="nav-tab active" onclick="showPage('calendar',this)">Календарь</button>
       <button class="nav-tab" onclick="showPage('together',this)">Вместе</button>
       <button class="nav-tab" onclick="showPage('letters',this)">Письма</button>
+      <button class="nav-tab" onclick="showPage('photos',this)">Фото</button>
+      <button class="nav-tab" onclick="showPage('music',this)">Музыка</button>
       <button class="nav-tab" onclick="showPage('achievements',this)">Ачивки</button>
       <button class="nav-tab" onclick="showPage('stats',this)">Статистика</button>
     </div>
@@ -678,6 +711,24 @@ body::before{background:transparent!important;}
     </div>
     <div class="lt-intro">Капсулы времени друг для друга. Напиши письмо и выбери дату, когда его можно будет открыть — до этого дня оно останется запечатанным.</div>
     <div class="lt-grid" id="lt-grid"></div>
+  </div>
+
+  <div id="page-photos" class="page">
+    <div class="lt-top">
+      <div class="page-title">Фотопамять</div>
+      <button class="tg-add" onclick="openPhotoModal()">+ Загрузить фото</button>
+    </div>
+    <div class="lt-intro">Совместный архив моментов. Фото сжимаются и хранятся в общем облаке — видны на всех устройствах.</div>
+    <div class="photo-grid" id="photo-grid"></div>
+  </div>
+
+  <div id="page-music" class="page">
+    <div class="lt-top">
+      <div class="page-title">Наш плейлист</div>
+      <button class="tg-add" onclick="openTrackModal()">+ Добавить трек</button>
+    </div>
+    <div class="lt-intro">Песни, которые что-то для нас значат. Вставь ссылку с YouTube — появится плеер.</div>
+    <div class="music-list" id="music-list"></div>
   </div>
 
   <div id="page-achievements" class="page">
@@ -829,6 +880,8 @@ function refreshAll(){
   if(active.id==='page-stats')renderStats();
   else if(active.id==='page-together')renderTogether();
   else if(active.id==='page-letters')renderLetters();
+  else if(active.id==='page-photos')renderPhotos();
+  else if(active.id==='page-music')renderMusic();
 }
 /* called by the Firebase module when remote data arrives */
 window.__applyRemote=function(data){
@@ -869,6 +922,8 @@ function showPage(id,btn){
   if(id==='stats')renderStats();
   if(id==='together')renderTogether();
   if(id==='letters')renderLetters();
+  if(id==='photos')renderPhotos();
+  if(id==='music')renderMusic();
 }
 
 /* ===== CALENDAR ===== */
@@ -1188,6 +1243,123 @@ function delLetter(id){
   closeModal();renderLetters();
 }
 function fmtDate(s){const d=new Date(s+'T00:00:00');return `${d.getDate()} ${MRG[d.getMonth()]} ${d.getFullYear()}`;}
+
+/* ===== PHOTOS ===== */
+function renderPhotos(){
+  const list=ld('photos',[]).slice().sort((a,b)=>b.ts-a.ts);
+  const grid=document.getElementById('photo-grid');
+  if(!list.length){grid.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// архив пуст — загрузите первый кадр</div>`;return;}
+  grid.innerHTML='';
+  list.forEach(p=>{
+    const c=document.createElement('div');c.className='photo-card';
+    c.innerHTML=`<img src="${p.data}" alt="" loading="lazy"><button class="photo-del" onclick="delPhoto(event,'${p.id}')">×</button>`+
+      (p.cap||p.by?`<div class="photo-cap">${p.cap?esc(p.cap):''}${p.by?` <span class="photo-by">— ${esc(p.by)}</span>`:''}</div>`:'');
+    c.querySelector('img').onclick=()=>openLightbox(p);
+    grid.appendChild(c);
+  });
+}
+function openLightbox(p){
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <img class="lightbox-img" src="${p.data}" alt="">
+    <div style="text-align:center;margin-top:1rem;font-family:'JetBrains Mono',monospace;color:var(--ink3);font-size:12px;">${p.cap?esc(p.cap)+' · ':''}${p.by?esc(p.by)+' · ':''}${new Date(p.ts).toLocaleDateString('ru-RU')}</div>`);
+}
+function openPhotoModal(){
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Загрузить фото</h3><div class="m-sub">момент в архив</div>
+    <label>Файл изображения</label>
+    <input type="file" id="ph-file" accept="image/*">
+    <div class="upload-hint">Фото автоматически сожмётся до ~1000px перед сохранением.</div>
+    <div class="modal-row">
+      <div><label>Кто</label><select id="ph-by"><option value="">—</option><option>Дима</option><option>Оля</option></select></div>
+      <div><label>Подпись</label><input type="text" id="ph-cap" maxlength="60" placeholder="напр. Владивосток"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="ph-save" onclick="addPhoto()">Загрузить</button>
+      <button class="btn-ghost" onclick="closeModal()">Отмена</button>
+    </div>`);
+}
+function fileToThumb(file,max,q,cb){
+  const img=new Image(), url=URL.createObjectURL(file);
+  img.onload=function(){
+    let w=img.width,h=img.height,s=Math.min(1,max/Math.max(w,h));
+    const c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url); cb(c.toDataURL('image/jpeg',q));
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);cb(null);};
+  img.src=url;
+}
+function addPhoto(){
+  const f=document.getElementById('ph-file').files[0];
+  if(!f){alert('Выберите файл');return;}
+  const by=document.getElementById('ph-by').value, cap=document.getElementById('ph-cap').value.trim();
+  const btn=document.getElementById('ph-save'); btn.textContent='Сжатие...'; btn.disabled=true;
+  fileToThumb(f,1000,0.72,function(data){
+    if(!data){alert('Не удалось обработать изображение');btn.textContent='Загрузить';btn.disabled=false;return;}
+    const arr=ld('photos',[]);
+    arr.push({id:'p'+Date.now(),data,by,cap,ts:Date.now()});
+    sv('photos',arr); closeModal(); renderPhotos();
+  });
+}
+function delPhoto(e,id){
+  e.stopPropagation();
+  if(!confirm('Удалить это фото?'))return;
+  let arr=ld('photos',[]);arr=arr.filter(x=>x.id!==id);sv('photos',arr);renderPhotos();
+}
+
+/* ===== MUSIC ===== */
+function ytId(u){const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([\w-]{11})/);return m?m[1]:null;}
+function renderMusic(){
+  const list=ld('tracks',[]).slice().sort((a,b)=>b.ts-a.ts);
+  const cont=document.getElementById('music-list');
+  if(!list.length){cont.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// плейлист пуст — добавьте первый трек</div>`;return;}
+  cont.innerHTML='';
+  list.forEach(t=>{
+    const id=ytId(t.url);
+    const el=document.createElement('div');el.className='track';
+    if(id){
+      el.innerHTML=`<div class="track-thumb" style="background-image:url(https://img.youtube.com/vi/${id}/hqdefault.jpg)" data-yt="${id}"></div>
+        <div class="track-meta"><div class="track-info"><div class="track-title">${esc(t.title||'Без названия')}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}</div>
+        <button class="track-del" onclick="delTrack('${t.id}')">×</button></div>`;
+      el.querySelector('.track-thumb').onclick=function(){
+        const f=document.createElement('iframe');
+        f.src=`https://www.youtube.com/embed/${id}?autoplay=1`;f.allow='autoplay; encrypted-media';f.allowFullscreen=true;
+        this.replaceWith(f);
+      };
+    } else {
+      el.innerHTML=`<div class="track-meta"><div class="track-info"><div class="track-title">${esc(t.title||t.url)}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}</div>
+        <button class="track-del" onclick="delTrack('${t.id}')">×</button></div>
+        <a class="track-open" href="${esc(t.url)}" target="_blank" rel="noopener">Открыть ссылку ↗</a>`;
+    }
+    cont.appendChild(el);
+  });
+}
+function openTrackModal(){
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Добавить трек</h3><div class="m-sub">ссылка youtube / любая</div>
+    <label>Ссылка</label>
+    <input type="text" id="tr-url" placeholder="https://youtu.be/...">
+    <div class="modal-row">
+      <div><label>Название</label><input type="text" id="tr-title" maxlength="80" placeholder="напр. Мельница — Дороги"></div>
+      <div><label>Кто</label><select id="tr-by"><option value="">—</option><option>Дима</option><option>Оля</option><option>Наша</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="addTrack()">Добавить</button>
+      <button class="btn-ghost" onclick="closeModal()">Отмена</button>
+    </div>`);
+}
+function addTrack(){
+  const url=document.getElementById('tr-url').value.trim();
+  if(!url){alert('Вставьте ссылку');return;}
+  const title=document.getElementById('tr-title').value.trim(), by=document.getElementById('tr-by').value;
+  const arr=ld('tracks',[]);
+  arr.push({id:'t'+Date.now(),url,title,by,ts:Date.now()});
+  sv('tracks',arr); closeModal(); renderMusic();
+}
+function delTrack(id){
+  if(!confirm('Удалить трек?'))return;
+  let arr=ld('tracks',[]);arr=arr.filter(x=>x.id!==id);sv('tracks',arr);renderMusic();
+}
 
 /* ===== ACHIEVEMENTS ===== */
 function getCustomAchs(){return ld('customAchs',[]);}
