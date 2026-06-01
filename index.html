@@ -260,24 +260,33 @@ h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
 .envelope:hover .env-del{opacity:1;}
 .env-del:hover{color:var(--rose);border-color:var(--rose);}
 /* letter covers — patterned backgrounds */
-.envelope.cv-classic{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M0 26L26 0' stroke='%23b8975a' stroke-opacity='0.09' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#f8f3ea,#fbf9f5);}
-.envelope.cv-rose{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='38'%3E%3Cpath d='M22 27s-6-3.9-6-7.7a3 3 0 0 1 6-.9 3 3 0 0 1 6 .9C28 23.1 22 27 22 27z' fill='none' stroke='%23c4826a' stroke-opacity='0.30' stroke-width='1.1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#f7e7e1,#f3ddd5);border-color:#e2b6a8;}
-.envelope.cv-sage{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M8 12c3-1 4-3 4-6 0 3 1 5 4 6-3 1-4 3-4 6 0-3-1-5-4-6z' fill='%237a9e8a' fill-opacity='0.20'/%3E%3Ccircle cx='25' cy='24' r='1.4' fill='%237a9e8a' fill-opacity='0.22'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#e8efe9,#dde9de);border-color:#abc8b6;}
-.envelope.cv-kraft{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M0 22L22 0M-2 6L6 -2M16 24L24 16' stroke='%238a6f43' stroke-opacity='0.16' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#ecdfc6,#e2d2b2);border-color:#cab38b;}
-.envelope.cv-night{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46'%3E%3Cg fill='%23d4b87a' fill-opacity='0.55'%3E%3Ccircle cx='10' cy='12' r='0.9'/%3E%3Ccircle cx='32' cy='8' r='0.7'/%3E%3Ccircle cx='38' cy='30' r='1'/%3E%3Ccircle cx='18' cy='34' r='0.7'/%3E%3Cpath d='M24 18l.7 1.6 1.7.2-1.3 1.2.4 1.7-1.5-.9-1.5.9.4-1.7-1.3-1.2 1.7-.2z'/%3E%3C/g%3E%3C/svg%3E") repeat, linear-gradient(160deg,#3b352b,#2a251f);border-color:#5b5142;}
-.envelope.cv-night .env-from,.envelope.cv-night .env-status{color:#d9cfb9;}
-.envelope.cv-night.unlocked .env-preview{color:#f4eddf;}
-.envelope.cv-night.unlocked{border-color:var(--gold);}
-.envelope.cv-night .env-open-hint{color:var(--gold-light);}
+/* neon cyberpunk letter covers — dark base + glowing pattern + neon border */
+.envelope[class*="cv-"]{color:#d8ecf2;}
+.envelope[class*="cv-"] .env-from,.envelope[class*="cv-"] .env-status{color:#a8c4cf;}
+.envelope[class*="cv-"].unlocked .env-preview{color:#eafaff;}
+.envelope.cv-classic{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M0 28L28 0' stroke='%2300f0ff' stroke-opacity='0.16' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#0a1622,#06101a);border-color:#1f6f7e;box-shadow:0 0 0 1px rgba(0,240,255,0.25),0 14px 36px -14px rgba(0,0,0,0.9),inset 0 0 26px rgba(0,240,255,0.06);}
+.envelope.cv-classic.unlocked{border-color:#00f0ff;}
+.envelope.cv-rose{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='38'%3E%3Cpath d='M22 27s-6-3.9-6-7.7a3 3 0 0 1 6-.9 3 3 0 0 1 6 .9C28 23.1 22 27 22 27z' fill='none' stroke='%23ff2a6d' stroke-opacity='0.5' stroke-width='1.1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#1c0a14,#12060d);border-color:#7e1f47;box-shadow:0 0 0 1px rgba(255,42,109,0.3),0 14px 36px -14px rgba(0,0,0,0.9),inset 0 0 26px rgba(255,42,109,0.07);}
+.envelope.cv-rose .env-wax{background:radial-gradient(circle at 35% 30%,#ff7aa6,#ff2a6d)!important;box-shadow:0 0 16px rgba(255,42,109,0.8)!important;}
+.envelope.cv-rose.unlocked{border-color:#ff2a6d;}
+.envelope.cv-sage{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M8 12c3-1 4-3 4-6 0 3 1 5 4 6-3 1-4 3-4 6 0-3-1-5-4-6z' fill='none' stroke='%2305ffa1' stroke-opacity='0.45'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#06170f,#03100a);border-color:#1f7e57;box-shadow:0 0 0 1px rgba(5,255,161,0.28),0 14px 36px -14px rgba(0,0,0,0.9),inset 0 0 26px rgba(5,255,161,0.06);}
+.envelope.cv-sage .env-wax{background:radial-gradient(circle at 35% 30%,#7dffce,#05ffa1)!important;box-shadow:0 0 16px rgba(5,255,161,0.8)!important;}
+.envelope.cv-sage.unlocked{border-color:#05ffa1;}
+.envelope.cv-kraft{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M0 24L24 0M-2 6L6 -2M18 26L26 18' stroke='%23d4b87a' stroke-opacity='0.28' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#161204,#0e0b02);border-color:#7e681f;box-shadow:0 0 0 1px rgba(212,184,122,0.3),0 14px 36px -14px rgba(0,0,0,0.9),inset 0 0 26px rgba(212,184,122,0.06);}
+.envelope.cv-kraft .env-wax{background:radial-gradient(circle at 35% 30%,#f2d79a,#d4b87a)!important;box-shadow:0 0 16px rgba(212,184,122,0.7)!important;}
+.envelope.cv-kraft.unlocked{border-color:#d4b87a;}
+.envelope.cv-night{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46'%3E%3Cg fill='%2300f0ff' fill-opacity='0.6'%3E%3Ccircle cx='10' cy='12' r='0.9'/%3E%3Ccircle cx='32' cy='8' r='0.7'/%3E%3Ccircle cx='38' cy='30' r='1'/%3E%3Ccircle cx='18' cy='34' r='0.7'/%3E%3C/g%3E%3Cg fill='%23ff2a6d' fill-opacity='0.5'%3E%3Ccircle cx='40' cy='16' r='0.7'/%3E%3Ccircle cx='6' cy='30' r='0.7'/%3E%3C/g%3E%3C/svg%3E") repeat, linear-gradient(160deg,#0a0c16,#05060d);border-color:#3a3f6b;box-shadow:0 0 0 1px rgba(122,130,200,0.3),0 14px 36px -14px rgba(0,0,0,0.9),inset 0 0 26px rgba(80,90,180,0.08);}
+.envelope.cv-night.unlocked{border-color:#7a82c8;}
+.envelope.cv-night .env-open-hint{color:#9aa8ff;}
 .cover-picker{display:flex;gap:8px;margin-top:0.4rem;flex-wrap:wrap;}
 .cover-opt{width:48px;height:34px;border:1px solid var(--border2);border-radius:4px;cursor:pointer;transition:transform 0.2s,outline 0.15s;background-size:auto, cover;}
 .cover-opt:hover{transform:translateY(-2px);}
 .cover-opt.sel{outline:2px solid var(--gold);outline-offset:2px;border-color:var(--gold);}
-.cover-opt.cv-classic{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M0 26L26 0' stroke='%23b8975a' stroke-opacity='0.12' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#f8f3ea,#fbf9f5);}
-.cover-opt.cv-rose{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='38'%3E%3Cpath d='M22 27s-6-3.9-6-7.7a3 3 0 0 1 6-.9 3 3 0 0 1 6 .9C28 23.1 22 27 22 27z' fill='none' stroke='%23c4826a' stroke-opacity='0.40' stroke-width='1.1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#f7e7e1,#f3ddd5);}
-.cover-opt.cv-sage{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M8 12c3-1 4-3 4-6 0 3 1 5 4 6-3 1-4 3-4 6 0-3-1-5-4-6z' fill='%237a9e8a' fill-opacity='0.28'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#e8efe9,#dde9de);}
-.cover-opt.cv-kraft{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M0 22L22 0M-2 6L6 -2M16 24L24 16' stroke='%238a6f43' stroke-opacity='0.22' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#ecdfc6,#e2d2b2);}
-.cover-opt.cv-night{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46'%3E%3Cg fill='%23d4b87a' fill-opacity='0.6'%3E%3Ccircle cx='10' cy='12' r='0.9'/%3E%3Ccircle cx='32' cy='8' r='0.7'/%3E%3Cpath d='M24 18l.7 1.6 1.7.2-1.3 1.2.4 1.7-1.5-.9-1.5.9.4-1.7-1.3-1.2 1.7-.2z'/%3E%3C/g%3E%3C/svg%3E") repeat, linear-gradient(160deg,#3b352b,#2a251f);}
+.cover-opt.cv-classic{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M0 28L28 0' stroke='%2300f0ff' stroke-opacity='0.3' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#0a1622,#06101a);}
+.cover-opt.cv-rose{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='38'%3E%3Cpath d='M22 27s-6-3.9-6-7.7a3 3 0 0 1 6-.9 3 3 0 0 1 6 .9C28 23.1 22 27 22 27z' fill='none' stroke='%23ff2a6d' stroke-opacity='0.7' stroke-width='1.1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#1c0a14,#12060d);}
+.cover-opt.cv-sage{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M8 12c3-1 4-3 4-6 0 3 1 5 4 6-3 1-4 3-4 6 0-3-1-5-4-6z' fill='none' stroke='%2305ffa1' stroke-opacity='0.7'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#06170f,#03100a);}
+.cover-opt.cv-kraft{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M0 24L24 0M-2 6L6 -2M18 26L26 18' stroke='%23d4b87a' stroke-opacity='0.5' stroke-width='1'/%3E%3C/svg%3E") repeat, linear-gradient(160deg,#161204,#0e0b02);}
+.cover-opt.cv-night{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46'%3E%3Cg fill='%2300f0ff' fill-opacity='0.8'%3E%3Ccircle cx='10' cy='12' r='0.9'/%3E%3Ccircle cx='32' cy='8' r='0.7'/%3E%3C/g%3E%3Cg fill='%23ff2a6d' fill-opacity='0.7'%3E%3Ccircle cx='38' cy='30' r='0.9'/%3E%3C/g%3E%3C/svg%3E") repeat, linear-gradient(160deg,#0a0c16,#05060d);}
 
 /* ===== ACHIEVEMENTS ===== */
 .ach-page-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2.5rem;flex-wrap:wrap;gap:1rem;}
@@ -1370,11 +1379,11 @@ function openLetterModal(){
     </div>
     <label>Конверт</label>
     <div class="cover-picker">
-      <div class="cover-opt cv-classic sel" data-cv="classic" onclick="selCover(this)" title="Классический"></div>
-      <div class="cover-opt cv-rose" data-cv="rose" onclick="selCover(this)" title="Розовый"></div>
-      <div class="cover-opt cv-sage" data-cv="sage" onclick="selCover(this)" title="Зелёный"></div>
-      <div class="cover-opt cv-kraft" data-cv="kraft" onclick="selCover(this)" title="Крафт"></div>
-      <div class="cover-opt cv-night" data-cv="night" onclick="selCover(this)" title="Тёмный"></div>
+      <div class="cover-opt cv-classic sel" data-cv="classic" onclick="selCover(this)" title="Циан / неон-сетка"></div>
+      <div class="cover-opt cv-rose" data-cv="rose" onclick="selCover(this)" title="Магента / сердца"></div>
+      <div class="cover-opt cv-sage" data-cv="sage" onclick="selCover(this)" title="Зелёный / матрица"></div>
+      <div class="cover-opt cv-kraft" data-cv="kraft" onclick="selCover(this)" title="Золото / штрих"></div>
+      <div class="cover-opt cv-night" data-cv="night" onclick="selCover(this)" title="Ночь / звёзды"></div>
     </div>
     <label>Текст письма</label>
     <textarea id="lt-text" placeholder="Когда ты это читаешь..."></textarea>
