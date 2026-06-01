@@ -93,6 +93,11 @@ h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
 .login-subtitle{font-family:'Jost',sans-serif;font-size:11px;font-weight:400;letter-spacing:0.4em;text-transform:uppercase;color:var(--ink4);}
 .login-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0.25rem auto;}
 .login-form{display:flex;flex-direction:column;align-items:center;gap:1.25rem;margin-top:0.5rem;}
+.who-pick{display:flex;gap:10px;}
+.who-opt{background:transparent;border:1px solid var(--border2);color:var(--ink3);font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1.4rem;cursor:pointer;transition:all .2s;}
+.who-opt.sel{border-color:var(--gold);color:var(--gold);box-shadow:0 0 12px -3px rgba(0,240,255,0.7);background:rgba(0,240,255,0.06);}
+#backup-btn.bk-due{border-color:var(--rose)!important;color:var(--rose)!important;animation:bkPulse 1.8s ease-in-out infinite;}
+@keyframes bkPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,42,109,0.5)}50%{box-shadow:0 0 14px 1px rgba(255,42,109,0.8)}}
 .login-form input{
   background:transparent;border:none;border-bottom:1px solid var(--border2);
   padding:0.6rem 1rem;font-family:'Jost',sans-serif;font-size:22px;font-weight:400;
@@ -740,6 +745,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <div class="login-subtitle">личное пространство</div>
     <div class="login-divider"></div>
     <div class="login-form">
+      <div class="who-pick">
+        <button type="button" class="who-opt" id="who-d" onclick="pickWho('d')">Дима</button>
+        <button type="button" class="who-opt" id="who-o" onclick="pickWho('o')">Оля</button>
+      </div>
       <input type="password" id="pwd" maxlength="8" placeholder="· · · ·" onkeydown="if(event.key==='Enter')login()"/>
       <button class="login-btn" onclick="login()">Войти</button>
       <div class="login-err" id="lerr"></div>
@@ -760,7 +769,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
       <button class="nav-tab" onclick="showPage('achievements',this)">Ачивки</button>
       <button class="nav-tab" onclick="showPage('stats',this)">Статистика</button>
     </div>
-    <button class="nav-logout" id="sound-btn" onclick="toggleSound()" title="Звук вкл/выкл" style="margin-left:0.75rem;">🔊</button>
+    <button class="nav-logout" id="backup-btn" onclick="openBackup()" title="Бэкап данных" style="margin-left:0.75rem;">💾</button>
+    <button class="nav-logout" id="sound-btn" onclick="toggleSound()" title="Звук вкл/выкл" style="margin-left:0.5rem;">🔊</button>
     <button class="nav-logout" onclick="logout()">Выйти</button>
   </div>
 
@@ -1017,14 +1027,21 @@ window.__applyRemote=function(data){
 };
 
 /* ===== AUTH ===== */
+let ME=localStorage.getItem('me')||'d';
+function whoName(w){return w==='o'?'Оля':'Дима';}
+function pickWho(w){ME=w;localStorage.setItem('me',w);
+  const d=document.getElementById('who-d'),o=document.getElementById('who-o');
+  if(d)d.classList.toggle('sel',w==='d');if(o)o.classList.toggle('sel',w==='o');}
 function login(){
   if(document.getElementById('pwd').value===PWD){
+    localStorage.setItem('me',ME);
     document.getElementById('login').style.display='none';
     const app=document.getElementById('app');
     app.style.display='flex';app.style.flexDirection='column';
     updateSoundIcon();
     const n=new Date();cy=n.getFullYear();cm=n.getMonth();
     renderCal();renderAch();
+    try{refreshBackupBadge();}catch(e){}
   } else {
     const e=document.getElementById('lerr');
     e.textContent='Неверный пароль';
@@ -1344,7 +1361,7 @@ function openLetterModal(){
     <div class="modal-row">
       <div>
         <label>От кого</label>
-        <select id="lt-from"><option>Дима</option><option>Оля</option></select>
+        <select id="lt-from"><option value="Дима"${ME==='d'?' selected':''}>Дима</option><option value="Оля"${ME==='o'?' selected':''}>Оля</option></select>
       </div>
       <div>
         <label>Открыть с</label>
@@ -1429,7 +1446,7 @@ function openPhotoModal(){
     <input type="file" id="ph-file" accept="image/*">
     <div class="upload-hint">Фото автоматически сожмётся до ~1000px перед сохранением.</div>
     <div class="modal-row">
-      <div><label>Кто</label><select id="ph-by"><option value="">—</option><option>Дима</option><option>Оля</option></select></div>
+      <div><label>Кто</label><select id="ph-by"><option value="Дима"${ME==='d'?' selected':''}>Дима</option><option value="Оля"${ME==='o'?' selected':''}>Оля</option></select></div>
       <div><label>Подпись</label><input type="text" id="ph-cap" maxlength="60" placeholder="напр. Владивосток"></div>
     </div>
     <div class="modal-actions">
@@ -1526,7 +1543,7 @@ function openTrackModal(){
     <input type="text" id="tr-url" placeholder="https://youtu.be/...">
     <div class="modal-row">
       <div><label>Название</label><input type="text" id="tr-title" maxlength="80" placeholder="напр. Мельница — Дороги"></div>
-      <div><label>Кто</label><select id="tr-by"><option value="">—</option><option>Дима</option><option>Оля</option><option>Наша</option></select></div>
+      <div><label>Кто</label><select id="tr-by"><option value="Дима"${ME==='d'?' selected':''}>Дима</option><option value="Оля"${ME==='o'?' selected':''}>Оля</option><option>Наша</option></select></div>
     </div>
     <div class="modal-actions">
       <button class="btn-primary" onclick="addTrack()">Добавить</button>
@@ -1694,8 +1711,6 @@ function qIndexFor(dateObj){
   const days=Math.floor(dateObj.getTime()/86400000);
   return ((days%QUESTIONS.length)+QUESTIONS.length)%QUESTIONS.length;
 }
-let _qWho=localStorage.getItem('q_who')||'d';
-function qSetWho(w){_qWho=w;localStorage.setItem('q_who',w);renderQuestion();}
 function renderQuestion(){
   const wrap=document.getElementById('q-wrap');
   const now=new Date();
@@ -1703,14 +1718,14 @@ function renderQuestion(){
   const data=ld('questions',{}); // {dateKey:{d:'',o:''}}
   const todayIdx=qIndexFor(now);
   const td=data[tkey]||{};
-  const myAns=td[_qWho]||'';
+  const myAns=td[ME]||'';
   const bothExist = !!td.d && !!td.o;
   function ansBlock(who){
-    const name=who==='d'?'Дима':'Оля';
+    const name=whoName(who);
     const val=td[who]||'';
     if(!val) return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-empty">ещё не ответил(а)</div></div>`;
     // скрываем чужой ответ пока сам не ответил
-    const hide = who!==_qWho && !myAns;
+    const hide = who!==ME && !myAns;
     return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-text${hide?' q-ans-hidden':''}">${hide?'ответ скрыт — сначала ответь сам(а)':esc(val)}</div></div>`;
   }
   let html=`<div class="q-card">
@@ -1718,12 +1733,8 @@ function renderQuestion(){
     <div class="q-text">${esc(QUESTIONS[todayIdx])}</div>
     <div class="q-answers">${ansBlock('d')}${ansBlock('o')}</div>
     <div class="q-form">
-      <div class="q-who-row">
-        <button class="q-who-btn ${_qWho==='d'?'sel':''}" onclick="qSetWho('d')">Я Дима</button>
-        <button class="q-who-btn ${_qWho==='o'?'sel':''}" onclick="qSetWho('o')">Я Оля</button>
-      </div>
-      <textarea id="q-input" placeholder="Твой ответ...">${esc(myAns)}</textarea>
-      <div class="q-who-row"><button class="btn-primary" style="flex:1" onclick="saveAnswer()">${myAns?'Обновить ответ':'Ответить'}</button></div>
+      <textarea id="q-input" placeholder="Твой ответ (${whoName(ME)})...">${esc(myAns)}</textarea>
+      <div class="q-who-row"><button class="btn-primary" style="flex:1" onclick="saveAnswer()">${myAns?'Обновить ответ':'Ответить как '+whoName(ME)}</button></div>
       <div class="q-hint">${bothExist?'✓ Оба ответили — ответы открыты':'Ответы откроются, когда ответите оба'}</div>
     </div>
   </div>`;
@@ -1753,10 +1764,62 @@ function saveAnswer(){
   const data=ld('questions',{});
   const tkey=todayKey();
   if(!data[tkey])data[tkey]={};
-  data[tkey][_qWho]=v;
+  data[tkey][ME]=v;
   sv('questions',data);
   if(window.playTick)playTick();
   renderQuestion();
+}
+
+/* ===== BACKUP ===== */
+const BK_KEYS=['ach','customAchs','together_since','events','letters','photos','tracks','questions'];
+function exportBackup(){
+  const dump={_app:'vmeste',_ts:Date.now(),data:{}};
+  // выгружаем всё из MEM (включая ключи дней c_*)
+  for(const k in MEM){dump.data[k]=MEM[k];}
+  const blob=new Blob([JSON.stringify(dump)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='vmeste-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+  localStorage.setItem('lastBackup',Date.now());
+  refreshBackupBadge();
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=function(){
+    try{
+      const j=JSON.parse(r.result);
+      const d=j.data||j;
+      let n=0;
+      for(const k in d){const val=(typeof d[k]==='string')?d[k]:JSON.stringify(d[k]);MEM[k]=val;try{localStorage.setItem(k,val);}catch(e){}if(window.__fbSet)window.__fbSet(k,val);n++;}
+      closeModal();
+      alert('Восстановлено ключей: '+n+'. Перезагрузка.');
+      location.reload();
+    }catch(e){alert('Не удалось прочитать файл бэкапа');}
+  };
+  r.readAsText(file);
+}
+function openBackup(){
+  const last=+localStorage.getItem('lastBackup')||0;
+  const lastTxt=last?new Date(last).toLocaleDateString('ru-RU')+' '+new Date(last).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'никогда';
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Бэкап данных</h3><div class="m-sub">резервная копия</div>
+    <div class="q-hint" style="margin-bottom:1rem">Последний бэкап: ${lastTxt}</div>
+    <div class="modal-actions" style="flex-direction:column;gap:0.7rem">
+      <button class="btn-primary" onclick="exportBackup()">⬇ Скачать бэкап (.json)</button>
+      <label class="btn-ghost" style="text-align:center;cursor:pointer">⬆ Восстановить из файла
+        <input type="file" accept="application/json,.json" style="display:none" onchange="if(this.files[0])importBackup(this.files[0])">
+      </label>
+    </div>
+    <div class="q-hint" style="margin-top:1rem">Восстановление перезапишет данные на всех устройствах.</div>`);
+}
+function refreshBackupBadge(){
+  // напоминание ТОЛЬКО Диме, раз в 7 дней
+  const b=document.getElementById('backup-btn');if(!b)return;
+  const last=+localStorage.getItem('lastBackup')||0;
+  const due = ME==='d' && (Date.now()-last > 7*86400000);
+  b.classList.toggle('bk-due',due);
+  b.title = due ? 'Пора сделать бэкап!' : 'Бэкап данных';
 }
 
 /* ===== ACHIEVEMENTS ===== */
@@ -2128,6 +2191,8 @@ function confetti(x,y){
     bar.querySelector('#cy-clock').textContent=t;
   }
   tick();setInterval(tick,1000);
+  // init who-picker highlight
+  try{pickWho(localStorage.getItem('me')||'d');}catch(e){}
 })();
 </script>
 </body>
