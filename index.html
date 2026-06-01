@@ -663,6 +663,71 @@ body.lightbox-open .modal{background:#0a0f16!important;}
 
 @media(max-width:600px){.cy-boot{font-size:11px;min-height:110px;}}
 </style>
+
+<!-- ===== DECOR + TRANSITIONS + POLISH (v3, revertable) ===== -->
+<style>
+/* --- glitch-cut tab transition --- */
+@keyframes glitchIn{
+  0%{opacity:0;transform:translate(0,8px);clip-path:inset(0 0 100% 0);filter:none}
+  18%{opacity:1;transform:translate(-3px,0);clip-path:inset(0 0 0 0);filter:drop-shadow(3px 0 rgba(255,42,109,0.8)) drop-shadow(-3px 0 rgba(0,240,255,0.8))}
+  34%{transform:translate(3px,0);filter:drop-shadow(-3px 0 rgba(255,42,109,0.7)) drop-shadow(3px 0 rgba(0,240,255,0.7))}
+  50%{transform:translate(-2px,0);clip-path:inset(28% 0 32% 0)}
+  64%{transform:translate(2px,0);clip-path:inset(0 0 0 0);filter:none}
+  100%{opacity:1;transform:translate(0,0)}
+}
+.page.glitch-in{animation:glitchIn .42s steps(2,end) both;}
+.page.glitch-in::after{content:'';position:absolute;left:0;right:0;top:0;height:42%;pointer-events:none;background:linear-gradient(rgba(0,240,255,0.10),transparent);animation:scanWipe .42s ease-out 1;z-index:50;}
+@keyframes scanWipe{0%{transform:translateY(-110%)}100%{transform:translateY(260%)}}
+.page{position:relative;}
+
+/* --- bottom status bar --- */
+#cy-status{position:fixed;left:0;right:0;bottom:0;z-index:9997;display:flex;align-items:center;gap:14px;
+  padding:5px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;color:var(--ink3);
+  background:rgba(6,8,14,0.92);border-top:1px solid var(--gold);box-shadow:0 -6px 22px -10px rgba(0,240,255,0.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+#cy-status .dot{width:7px;height:7px;border-radius:50%;background:var(--sage);box-shadow:0 0 8px var(--sage);animation:stPulse 2.2s ease-in-out infinite;}
+@keyframes stPulse{0%,100%{opacity:1}50%{opacity:0.35}}
+#cy-status b{color:var(--gold);font-weight:500;}
+#cy-status .sp{flex:1;}
+#cy-status .stk .d{color:var(--rose);}#cy-status .stk .o{color:var(--sage);}
+#app{padding-bottom:34px;}
+@media(max-width:600px){
+  #cy-status{font-size:10px;gap:9px;padding:4px 10px;}
+  #cy-status .hide-m{display:none;}
+}
+
+/* --- side vertical labels --- */
+.cy-side{position:fixed;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;z-index:9995;pointer-events:none;
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.45em;text-transform:uppercase;
+  color:rgba(0,240,255,0.32);text-shadow:0 0 6px rgba(0,240,255,0.3);}
+.cy-side.l{left:6px;}
+.cy-side.r{right:6px;transform:translateY(-50%) rotate(180deg);}
+@media(max-width:900px){.cy-side{display:none;}}
+
+/* --- polish: consistency / spacing / readability --- */
+.page{padding-top:2.6rem;padding-bottom:3rem;}
+.ach-section{margin-bottom:2.4rem;}
+.lt-intro{line-height:1.5;}
+.nav-tab{transition:color .2s,text-shadow .2s,transform .15s;}
+.nav-tab:active{transform:translateY(1px);}
+.pcard,.stat-cell,.ev-card,.envelope,.tg-ms,.ach-card,.cal-cell,.track,.photo-card,.q-card{transition:transform .3s cubic-bezier(0.22,1,0.36,1),box-shadow .3s,border-color .25s;}
+/* unified focus ring */
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.nav-tab:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+/* tap feedback on interactive cards */
+.ach-card:active,.track-play:active,.cover-opt:active,.icon-opt:active,.q-who-btn:active,.mnav-btn:active{transform:scale(0.96);}
+/* readability: slightly stronger body contrast */
+.ev-date,.stat-sub,.tg-ms-sub{color:var(--ink3);}
+
+@media(max-width:600px){
+  .page{padding-top:1.8rem;padding-bottom:2.6rem;}
+  #app{padding-bottom:30px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .page.glitch-in{animation:fadeIn .3s ease both;}
+  .page.glitch-in::after{display:none;}
+  #cy-status .dot{animation:none;}
+}
+</style>
 </head>
 <body>
 
@@ -977,7 +1042,11 @@ function logout(){
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+  const pg=document.getElementById('page-'+id);
+  pg.classList.add('active');
+  if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)){
+    pg.classList.remove('glitch-in');void pg.offsetWidth;pg.classList.add('glitch-in');
+  }
   if(btn)btn.classList.add('active');
   if(tgTimer){clearInterval(tgTimer);tgTimer=null;}
   if(id==='stats')renderStats();
@@ -2033,6 +2102,32 @@ function confetti(x,y){
         {duration:600,easing:'ease-out'}).onfinish=function(){d.remove();};
     },{passive:true});
   }
+})();
+</script>
+
+<!-- ===== DECOR ELEMENTS (status bar + side labels) ===== -->
+<script>
+(function(){
+  // side labels
+  const sl=document.createElement('div');sl.className='cy-side l';sl.textContent='О & Д // SYS v2.0';
+  const sr=document.createElement('div');sr.className='cy-side r';sr.textContent='NEUROLINK · 0x4F2A';
+  document.body.appendChild(sl);document.body.appendChild(sr);
+  // bottom status bar
+  const bar=document.createElement('div');bar.id='cy-status';
+  bar.innerHTML='<span class="dot"></span><b>ONLINE</b><span class="hide-m">О&Д SYS v2.0</span><span class="sp"></span><span class="stk hide-m"></span><span id="cy-clock"></span>';
+  document.body.appendChild(bar);
+  function strk(who){try{return (typeof streak==='function')?streak(who):0;}catch(e){return 0;}}
+  function tick(){
+    const n=new Date();
+    const t=n.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const app=document.getElementById('app');
+    const live=app&&getComputedStyle(app).display!=='none';
+    const stk=bar.querySelector('.stk');
+    if(live&&typeof cy!=='undefined'){stk.innerHTML='🔥 <span class="d">D:'+strk('d')+'</span> <span class="o">O:'+strk('o')+'</span>';}
+    else stk.innerHTML='';
+    bar.querySelector('#cy-clock').textContent=t;
+  }
+  tick();setInterval(tick,1000);
 })();
 </script>
 </body>
