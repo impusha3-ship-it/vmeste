@@ -1494,23 +1494,34 @@ function delPhoto(e,id){
 
 /* ===== MUSIC ===== */
 function ytId(u){const m=String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([\w-]{11})/);return m?m[1]:null;}
+function ytHostsRoot(){
+  let r=document.getElementById('yt-hosts');
+  if(!r){r=document.createElement('div');r.id='yt-hosts';document.body.appendChild(r);}
+  return r;
+}
 function renderMusic(){
-  for(var k in _players){try{_players[k].destroy();}catch(e){}}_players={};
   const list=ld('tracks',[]).slice().sort((a,b)=>b.ts-a.ts);
   const cont=document.getElementById('music-list');
+  // удаляем плееры, чьих треков больше нет
+  const ids=new Set(list.map(t=>t.id));
+  for(var k in _players){if(!ids.has(k)){try{_players[k].destroy();}catch(e){}delete _players[k];const h=document.getElementById('yth-'+k);if(h)h.remove();}}
   if(!list.length){cont.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// плейлист пуст — добавьте первый трек</div>`;return;}
   cont.innerHTML='';
+  const hosts=ytHostsRoot();
   list.forEach(t=>{
     const id=ytId(t.url);
     const el=document.createElement('div');el.className='track';
     if(id){
+      // host для плеера живёт ВНЕ списка (постоянный), чтобы музыка не прерывалась
+      if(!document.getElementById('yth-'+t.id)){const h=document.createElement('div');h.className='yt-host';h.id='yth-'+t.id;hosts.appendChild(h);}
+      const playing=_players[t.id] && _players[t.id].getPlayerState && _players[t.id].getPlayerState()===1;
       el.innerHTML=`<div class="track-meta">
-          <button class="track-play" data-id="${t.id}" onclick="togglePlay('${t.id}','${id}')">▶</button>
+          <button class="track-play" data-id="${t.id}" onclick="togglePlay('${t.id}','${id}')">${playing?'⏸':'▶'}</button>
           <div class="track-info"><div class="track-title">${esc(t.title||'Без названия')}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}
             <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></div></div>
           <button class="track-del" onclick="delTrack('${t.id}')">×</button>
-        </div>
-        <div class="yt-host" id="yth-${t.id}"></div>`;
+        </div>`;
+      if(playing)el.classList.add('playing');
     } else {
       el.innerHTML=`<div class="track-meta"><div class="track-info"><div class="track-title">${esc(t.title||t.url)}</div>${t.by?`<div class="track-by">${esc(t.by)}</div>`:''}</div>
         <button class="track-del" onclick="delTrack('${t.id}')">×</button></div>
