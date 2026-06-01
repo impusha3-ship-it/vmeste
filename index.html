@@ -741,6 +741,35 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .page.glitch-in::after{display:none;}
   #cy-status .dot{animation:none;}
 }
+
+/* ===== PET ===== */
+.pet-stage-wrap{display:flex;justify-content:center;padding:1rem 0 0.5rem;}
+.pet-svg{width:200px;height:212px;animation:petBreath 4s ease-in-out infinite;}
+@keyframes petBreath{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.02)}}
+.pet-stage-wrap.mood-lo .pet-svg{filter:saturate(0.6) brightness(0.8);animation-duration:6s;}
+.pet-eye{animation:petBlink 4.5s infinite;transform-origin:center;}
+@keyframes petBlink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(0.1)}}
+.pet-halo{animation:petSpin 14s linear infinite;transform-origin:center;}
+@keyframes petSpin{to{transform:rotate(360deg)}}
+.pet-anten,.pet-visor{animation:petPulse 1.6s ease-in-out infinite;}
+@keyframes petPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.pet-info{text-align:center;max-width:420px;margin:0 auto;}
+.pet-lvl{font-family:'Tektur',sans-serif;font-size:22px;color:var(--ink);letter-spacing:0.08em;}
+.pet-lvl span{color:var(--gold);}
+.pet-xpbar{height:12px;background:rgba(0,240,255,0.08);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:0.8rem 0 0.4rem;}
+.pet-xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-light),var(--gold));box-shadow:0 0 12px var(--gold);transition:width .8s cubic-bezier(0.22,1,0.36,1);}
+.pet-xptxt{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);}
+.pet-mood{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);margin-top:0.5rem;}
+.pet-mood b{color:var(--gold);}
+.pet-traits-head{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--ink4);margin:2rem 0 1rem;text-align:center;}
+.pet-traits{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-width:620px;margin:0 auto;}
+.pet-trait{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink4);border:1px solid var(--border);padding:0.6rem 0.8rem;background:rgba(10,16,26,0.5);}
+.pet-trait.on{color:var(--ink);border-color:var(--gold);box-shadow:0 0 10px -3px rgba(0,240,255,0.5);}
+.pet-trait span{color:var(--gold);font-weight:700;}
+.pet-trait:not(.on) span{color:var(--ink4);}
+.pet-xp-guide{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink4);text-align:center;margin:1.6rem auto 0;max-width:620px;line-height:1.6;}
+.pet-toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);z-index:9999;font-family:'Tektur',sans-serif;font-size:18px;color:var(--gold);text-shadow:0 0 14px rgba(0,240,255,0.9);pointer-events:none;}
+@media(prefers-reduced-motion:reduce){.pet-svg,.pet-eye,.pet-halo,.pet-anten,.pet-visor{animation:none!important}}
 </style>
 </head>
 <body>
@@ -772,6 +801,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
       <button class="nav-tab active" onclick="showPage('calendar',this)">Календарь</button>
       <button class="nav-tab" onclick="showPage('together',this)">Вместе</button>
       <button class="nav-tab" onclick="showPage('question',this)">Вопрос дня</button>
+      <button class="nav-tab" onclick="showPage('pet',this)">Питомец</button>
       <button class="nav-tab" onclick="showPage('letters',this)">Письма</button>
       <button class="nav-tab" onclick="showPage('photos',this)">Фото</button>
       <button class="nav-tab" onclick="showPage('music',this)">Музыка</button>
@@ -856,6 +886,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <div class="lt-top"><div class="page-title">Вопрос дня</div></div>
     <div class="lt-intro">Каждый день — новый вопрос. Ответьте оба и увидите ответы друг друга.</div>
     <div id="q-wrap"></div>
+  </div>
+
+  <div id="page-pet" class="page">
+    <div class="lt-top"><div class="page-title">Амням</div></div>
+    <div id="pet-wrap"></div>
   </div>
 
   <div id="page-photos" class="page">
@@ -1027,6 +1062,7 @@ function refreshAll(){
   else if(active.id==='page-photos')renderPhotos();
   else if(active.id==='page-music')renderMusic();
   else if(active.id==='page-question')renderQuestion();
+  else if(active.id==='page-pet')renderPet();
 }
 /* called by the Firebase module when remote data arrives */
 window.__applyRemote=function(data){
@@ -1051,6 +1087,7 @@ function login(){
     const n=new Date();cy=n.getFullYear();cm=n.getMonth();
     renderCal();renderAch();
     try{refreshBackupBadge();}catch(e){}
+    try{petBackfill();}catch(e){}
   } else {
     const e=document.getElementById('lerr');
     e.textContent='Неверный пароль';
@@ -1081,6 +1118,7 @@ function showPage(id,btn){
   if(id==='photos')renderPhotos();
   if(id==='music')renderMusic();
   if(id==='question')renderQuestion();
+  if(id==='pet')renderPet();
 }
 
 /* ===== CALENDAR ===== */
@@ -1146,6 +1184,7 @@ function checkStreakAch(sd,so){
   const reach=Math.min(sd,so)>=30;
   if(reach && !done.a29){
     done.a29=true;sv('ach',done);
+    petGain('ach_a29',XP.ach);
     syncCompleteFx();
     try{const a=document.getElementById('page-achievements');if(a&&a.classList.contains('active'))renderAch();}catch(e){}
   } else if(!reach && done.a29){
@@ -1178,6 +1217,65 @@ function playAch(){if(!soundOn())return;const c=actx();if(!c)return;if(c.state==
 function toggleSound(){localStorage.setItem('muted',soundOn()?'1':'0');updateSoundIcon();if(soundOn())playTick();}
 function updateSoundIcon(){const b=document.getElementById('sound-btn');if(b)b.textContent=soundOn()?'🔊':'🔇';}
 
+/* ===== PET XP ENGINE ===== */
+const XP={day:10,both:10,question:15,ach:50,photo:20,track:15,letter:25};
+function petData(){return ld('pet',{xp:0,claimed:{}});}
+// порог суммарного XP для достижения уровня n (n>=1)
+function lvlThreshold(n){let t=0;for(let i=1;i<n;i++)t+=Math.round(80*Math.pow(1.45,i-1));return t;}
+function levelFromXp(xp){let n=1;while(xp>=lvlThreshold(n+1))n++;return n;}
+const PET_MAXLVL=18;
+function petGain(key,amount,silent){
+  const p=petData();
+  if(p.claimed[key])return; // anti-chit: одно событие — один раз
+  const before=levelFromXp(p.xp);
+  p.claimed[key]=1;p.xp+=amount;
+  const after=levelFromXp(p.xp);
+  sv('pet',p);
+  if(!silent)petToast('+'+amount+' XP');
+  if(after>before)petLevelUp(after);
+  const act=document.querySelector('.page.active');
+  if(act&&act.id==='page-pet')renderPet();
+}
+function petToast(txt){
+  const t=document.createElement('div');t.className='pet-toast';t.textContent=txt;
+  document.body.appendChild(t);
+  t.animate([{opacity:0,transform:'translate(-50%,10px)'},{opacity:1,transform:'translate(-50%,0)'},{opacity:1},{opacity:0,transform:'translate(-50%,-18px)'}],{duration:1600,easing:'ease'}).onfinish=()=>t.remove();
+}
+function petLevelUp(lvl){
+  if(window.playAch)playAch();
+  if(window.confetti)confetti(innerWidth/2,innerHeight*0.4);
+  const o=document.createElement('div');o.className='cy-access grant';
+  o.innerHTML='<b>LEVEL '+lvl+'</b><span>АМНЯМ ПОДРОС</span>';
+  document.body.appendChild(o);
+  o.animate([{opacity:0},{opacity:1},{opacity:1},{opacity:0}],{duration:2200,easing:'ease'}).onfinish=()=>o.remove();
+}
+// «догон»: начислить XP за всё уже выполненное (вызывается при входе)
+function petBackfill(){
+  const done=ld('ach',{});
+  for(const id in done){if(done[id])petGain('ach_'+id,XP.ach,true);}
+  (ld('photos',[])||[]).forEach(p=>petGain('photo_'+p.id,XP.photo,true));
+  (ld('tracks',[])||[]).forEach(t=>petGain('track_'+t.id,XP.track,true));
+  (ld('letters',[])||[]).forEach(l=>petGain('letter_'+l.id,XP.letter,true));
+  const q=ld('questions',{});for(const dk in q){const e=q[dk]; if(e&&(e.d||e.o))petGain('q_'+dk,XP.question,true);}
+  // дни привычек: пробегаем последние 400 дней
+  const n=new Date();
+  for(let i=0;i<400;i++){const dd=new Date(n);dd.setDate(dd.getDate()-i);
+    const v=ld(dk(dd.getFullYear(),dd.getMonth(),dd.getDate()),null);
+    if(!v)continue;const key=`${dd.getFullYear()}-${dd.getMonth()}-${dd.getDate()}`;
+    if(v.d)petGain('day_d_'+key,XP.day,true);
+    if(v.o)petGain('day_o_'+key,XP.day,true);
+    if(v.d&&v.o)petGain('both_'+key,XP.both,true);
+  }
+}
+// активность за 3 дня → настроение (0..1)
+function petMood(){
+  const n=new Date();let hit=0,tot=0;
+  for(let i=0;i<3;i++){const dd=new Date(n);dd.setDate(dd.getDate()-i);
+    const v=ld(dk(dd.getFullYear(),dd.getMonth(),dd.getDate()),{d:false,o:false});
+    tot+=2;if(v.d)hit++;if(v.o)hit++;}
+  return tot?hit/tot:0;
+}
+
 function tog(d,who,el){
   const k=dk(cy,cm,d);
   const v=ld(k,{d:false,o:false});
@@ -1185,6 +1283,11 @@ function tog(d,who,el){
   v[who]=el.checked;
   sv(k,v);
   if(el.checked)playTick();
+  if(el.checked){
+    const key=`${cy}-${cm}-${d}`;
+    petGain('day_'+who+'_'+key,XP.day);
+    if(v.d&&v.o)petGain('both_'+key,XP.both);
+  }
   if(el.checked && v.d && v.o && !was){
     const r=el.getBoundingClientRect();
     confetti(r.left+r.width/2, r.top);
@@ -1399,8 +1502,10 @@ function saveLetter(){
   const text=document.getElementById('lt-text').value.trim();
   if(!text||!unlock)return;
   const letters=ld('letters',[]);
-  letters.push({id:'l'+Date.now(),from,unlock,text,cover:window._selCover||'classic',created:new Date().toISOString().slice(0,10)});
+  const lid='l'+Date.now();
+  letters.push({id:lid,from,unlock,text,cover:window._selCover||'classic',created:new Date().toISOString().slice(0,10)});
   sv('letters',letters);
+  petGain('letter_'+lid,XP.letter);
   closeModal();renderLetters();
   confetti(window.innerWidth/2, window.innerHeight*0.3);
 }
@@ -1482,8 +1587,9 @@ function addPhoto(){
   fileToThumb(f,1000,0.72,function(data){
     if(!data){alert('Не удалось обработать изображение');btn.textContent='Загрузить';btn.disabled=false;return;}
     const arr=ld('photos',[]);
-    arr.push({id:'p'+Date.now(),data,by,cap,ts:Date.now()});
-    sv('photos',arr); closeModal(); renderPhotos();
+    const pid='p'+Date.now();
+    arr.push({id:pid,data,by,cap,ts:Date.now()});
+    sv('photos',arr); petGain('photo_'+pid,XP.photo); closeModal(); renderPhotos();
   });
 }
 function delPhoto(e,id){
@@ -1575,8 +1681,9 @@ function addTrack(){
   if(!url){alert('Вставьте ссылку');return;}
   const title=document.getElementById('tr-title').value.trim(), by=document.getElementById('tr-by').value;
   const arr=ld('tracks',[]);
-  arr.push({id:'t'+Date.now(),url,title,by,ts:Date.now()});
-  sv('tracks',arr); closeModal(); renderMusic();
+  const trid='t'+Date.now();
+  arr.push({id:trid,url,title,by,ts:Date.now()});
+  sv('tracks',arr); petGain('track_'+trid,XP.track); closeModal(); renderMusic();
 }
 function delTrack(id){
   if(!confirm('Удалить трек?'))return;
@@ -1786,12 +1893,97 @@ function saveAnswer(){
   if(!data[tkey])data[tkey]={};
   data[tkey][ME]=v;
   sv('questions',data);
+  if(v)petGain('q_'+tkey,XP.question);
   if(window.playTick)playTick();
   renderQuestion();
 }
 
+/* ===== PET RENDER ===== */
+const PET_STAGES=[
+  {min:1,name:'Зародыш'},{min:3,name:'Малыш'},{min:6,name:'Подросток'},
+  {min:10,name:'Взрослый'},{min:14,name:'Кибер-форма'},{min:18,name:'Легенда'}
+];
+function petStage(lvl){let s=PET_STAGES[0];for(const st of PET_STAGES)if(lvl>=st.min)s=st;return s;}
+// палитра по уровню
+function petPalette(lvl){
+  if(lvl>=18)return{c:'#ffd24a',g:'rgba(255,210,74,.9)'};
+  if(lvl>=14)return{c:'#d4b87a',g:'rgba(212,184,122,.9)'};
+  if(lvl>=10)return{c:'#ff2a6d',g:'rgba(255,42,109,.9)'};
+  if(lvl>=6)return{c:'#05ffa1',g:'rgba(5,255,161,.9)'};
+  return{c:'#00f0ff',g:'rgba(0,240,255,.9)'};
+}
+// SVG Амняма по уровню+настроению. body растёт, черты/декор добавляются.
+function petSVG(lvl,mood){
+  const pal=petPalette(lvl);
+  const happy=mood>=0.5;
+  const grow=Math.min(1,(lvl-1)/17); // 0..1
+  const r=34+grow*14; // тело
+  const cx=80,cy=86;
+  let s=`<svg viewBox="0 0 160 170" class="pet-svg" style="--pc:${pal.c}">`;
+  // неон-ореол (C, с lvl>=4)
+  if(lvl>=4)s+=`<circle cx="${cx}" cy="${cy}" r="${r+14}" fill="none" stroke="${pal.c}" stroke-opacity="0.25" stroke-width="1.5" class="pet-halo"/>`;
+  if(lvl>=16)s+=`<circle cx="${cx}" cy="${cy}" r="${r+22}" fill="none" stroke="${pal.c}" stroke-opacity="0.15" stroke-width="1"/>`;
+  // схемы на теле (C, lvl>=12)
+  // тело
+  s+=`<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r*0.92}" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="2" filter="drop-shadow(0 0 8px ${pal.g})"/>`;
+  if(lvl>=12){s+=`<path d="M${cx-r*0.5} ${cy} h${r} M${cx} ${cy-r*0.5} v${r}" stroke="${pal.c}" stroke-opacity="0.25" stroke-width="1"/><circle cx="${cx-r*0.3}" cy="${cy+r*0.3}" r="2" fill="${pal.c}" opacity="0.5"/>`;}
+  // ушки (B, lvl>=3)
+  if(lvl>=3){s+=`<path d="M${cx-r*0.6} ${cy-r*0.75} l-6 -16 l16 8 z" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="2"/><path d="M${cx+r*0.6} ${cy-r*0.75} l6 -16 l-16 8 z" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="2"/>`;}
+  // антенна (C, lvl>=8)
+  if(lvl>=8){s+=`<line x1="${cx}" y1="${cy-r*0.95}" x2="${cx}" y2="${cy-r-16}" stroke="${pal.c}" stroke-width="2"/><circle cx="${cx}" cy="${cy-r-18}" r="3.5" fill="${pal.c}" class="pet-anten"/>`;}
+  // глаза (B) — большие у малыша, прищур-визор у кибер
+  const ey=cy-2, ex=r*0.42;
+  if(lvl>=14){ // визор (C)
+    s+=`<rect x="${cx-ex-10}" y="${ey-7}" width="${ex*2+20}" height="13" rx="6" fill="rgba(0,0,0,0.6)" stroke="${pal.c}" stroke-width="1.5"/><line x1="${cx-ex-6}" y1="${ey}" x2="${cx+ex+6}" y2="${ey}" stroke="${pal.c}" stroke-width="2" class="pet-visor"/>`;
+  } else {
+    const er=lvl>=6?5:7;
+    s+=`<circle cx="${cx-ex}" cy="${ey}" r="${er}" fill="${pal.c}" class="pet-eye"/><circle cx="${cx+ex}" cy="${ey}" r="${er}" fill="${pal.c}" class="pet-eye"/>`;
+    s+=`<circle cx="${cx-ex+1}" cy="${ey-1}" r="1.6" fill="#04121a"/><circle cx="${cx+ex+1}" cy="${ey-1}" r="1.6" fill="#04121a"/>`;
+  }
+  // рот (E настроение)
+  if(happy)s+=`<path d="M${cx-9} ${cy+r*0.45} q9 9 18 0" fill="none" stroke="${pal.c}" stroke-width="2" stroke-linecap="round"/>`;
+  else s+=`<path d="M${cx-8} ${cy+r*0.5} q8 -6 16 0" fill="none" stroke="${pal.c}" stroke-width="2" stroke-linecap="round" opacity="0.7"/>`;
+  // усики (B, lvl>=6)
+  if(lvl>=6){s+=`<path d="M${cx-r*0.5} ${cy+5} h-14 M${cx-r*0.5} ${cy+9} h-12" stroke="${pal.c}" stroke-width="1" opacity="0.6"/><path d="M${cx+r*0.5} ${cy+5} h14 M${cx+r*0.5} ${cy+9} h12" stroke="${pal.c}" stroke-width="1" opacity="0.6"/>`;}
+  // лапки (B, lvl>=4)
+  if(lvl>=4){s+=`<ellipse cx="${cx-r*0.45}" cy="${cy+r*0.85}" rx="7" ry="5" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="1.5"/><ellipse cx="${cx+r*0.45}" cy="${cy+r*0.85}" rx="7" ry="5" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="1.5"/>`;}
+  // корона (C, lvl>=18)
+  if(lvl>=18){s+=`<path d="M${cx-16} ${cy-r-4} l4 -14 l6 8 l6 -12 l6 12 l6 -8 l4 14 z" fill="none" stroke="#ffd24a" stroke-width="2" filter="drop-shadow(0 0 6px rgba(255,210,74,.9))"/>`;}
+  s+=`</svg>`;
+  return s;
+}
+function petTraitsList(lvl){
+  const all=[
+    [3,'Ушки'],[4,'Лапки + неон-ореол'],[6,'Глаза-кристаллы, усики'],[8,'Антенна-сканер'],
+    [10,'Магента-форма'],[12,'Схемы на теле'],[14,'Кибер-визор'],[16,'Двойной ореол'],[18,'Корона Легенды']
+  ];
+  return all.map(([n,t])=>`<div class="pet-trait${lvl>=n?' on':''}"><span>${lvl>=n?'✓':'lvl '+n}</span> ${t}</div>`).join('');
+}
+function renderPet(){
+  const wrap=document.getElementById('pet-wrap');if(!wrap)return;
+  const p=petData();
+  const lvl=levelFromXp(p.xp);
+  const stage=petStage(lvl);
+  const mood=petMood();
+  const curBase=lvlThreshold(lvl), nextBase=lvlThreshold(lvl+1);
+  const inLvl=p.xp-curBase, need=nextBase-curBase;
+  const pct=lvl>=PET_MAXLVL?100:Math.round(inLvl/need*100);
+  const moodTxt=mood>=0.66?'бодрый':mood>=0.34?'спокойный':'скучает';
+  wrap.innerHTML=`
+    <div class="pet-stage-wrap mood-${mood>=0.5?'hi':'lo'}">${petSVG(lvl,mood)}</div>
+    <div class="pet-info">
+      <div class="pet-lvl">УРОВЕНЬ ${lvl} · <span>${esc(stage.name)}</span></div>
+      <div class="pet-xpbar"><i style="width:${pct}%"></i></div>
+      <div class="pet-xptxt">${lvl>=PET_MAXLVL?('МАКС · '+p.xp+' XP'):(inLvl+' / '+need+' XP до ур. '+(lvl+1))}</div>
+      <div class="pet-mood">Настроение: <b>${moodTxt}</b> ${mood>=0.5?'⚡':'…'}</div>
+    </div>
+    <div class="pet-traits-head">Черты и улучшения</div>
+    <div class="pet-traits">${petTraitsList(lvl)}</div>
+    <div class="pet-xp-guide">Опыт: зарядка/таблетка +${XP.day}, оба за день +${XP.both}, вопрос +${XP.question}, фото +${XP.photo}, трек +${XP.track}, письмо +${XP.letter}, ачивка +${XP.ach}</div>`;
+}
+
 /* ===== BACKUP ===== */
-const BK_KEYS=['ach','customAchs','together_since','events','letters','photos','tracks','questions'];
+const BK_KEYS=['ach','customAchs','together_since','events','letters','photos','tracks','questions','pet'];
 function exportBackup(){
   const dump={_app:'vmeste',_ts:Date.now(),data:{}};
   // выгружаем всё из MEM (включая ключи дней c_*)
@@ -1875,7 +2067,7 @@ function renderAch(){
       c.onclick=(e)=>{
         if(a.id==='a29'){return;} // auto-only: unlock by 30-day streak
         const d2=ld('ach',{});const willDo=!d2[a.id];d2[a.id]=willDo;sv('ach',d2);renderAch();
-        if(willDo){const r=c.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2);playAch();}
+        if(willDo){const r=c.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2);playAch();petGain('ach_'+a.id,XP.ach);}
       };
       gr.appendChild(c);
     });
