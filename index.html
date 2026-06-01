@@ -637,6 +637,30 @@ body.lightbox-open .modal{background:#0a0f16!important;}
 .track-del:hover{color:var(--rose);}
 .upload-hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink4);margin-top:6px;}
 
+/* ===== QUESTION OF DAY ===== */
+.q-card{border:1px solid var(--border2);background:rgba(10,16,26,0.74);padding:1.6rem 1.5rem;margin-bottom:1.4rem;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));box-shadow:var(--neon-shadow);}
+.q-date{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem;}
+.q-text{font-family:'Tektur',sans-serif;font-size:24px;line-height:1.3;color:var(--ink);margin-bottom:1.3rem;}
+.q-answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:600px){.q-answers{grid-template-columns:1fr;}}
+.q-ans{border:1px solid var(--border);padding:1rem 1.1rem;background:rgba(0,240,255,0.03);}
+.q-ans.d{border-left:3px solid var(--rose);}
+.q-ans.o{border-left:3px solid var(--sage);}
+.q-ans-who{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink4);margin-bottom:0.5rem;}
+.q-ans.d .q-ans-who{color:var(--rose);}
+.q-ans.o .q-ans-who{color:var(--sage);}
+.q-ans-text{font-family:'Jura',sans-serif;font-size:16px;color:var(--ink2);line-height:1.45;white-space:pre-wrap;word-break:break-word;}
+.q-ans-empty{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink4);font-style:italic;}
+.q-ans-hidden{filter:blur(7px);user-select:none;}
+.q-form{margin-top:1.2rem;}
+.q-form textarea{width:100%;background:rgba(0,240,255,0.04);border:1px solid var(--border2);color:var(--ink);border-radius:0;padding:0.7rem 0.9rem;font-family:'Jura',sans-serif;font-size:16px;min-height:74px;resize:vertical;outline:none;}
+.q-form textarea:focus{border-color:var(--gold);box-shadow:0 0 12px -3px rgba(0,240,255,0.6);}
+.q-who-row{display:flex;gap:8px;margin:0.6rem 0;}
+.q-who-btn{flex:1;background:transparent;border:1px solid var(--border2);color:var(--ink3);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:0.55rem;cursor:pointer;transition:all .2s;}
+.q-who-btn.sel{border-color:var(--gold);color:var(--gold);box-shadow:0 0 10px -3px rgba(0,240,255,0.6);}
+.q-hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink4);margin-top:0.5rem;}
+.q-past-head{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--ink4);margin:2rem 0 1rem;}
+
 @media(max-width:600px){.cy-boot{font-size:11px;min-height:110px;}}
 </style>
 </head>
@@ -664,6 +688,7 @@ body.lightbox-open .modal{background:#0a0f16!important;}
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="showPage('calendar',this)">Календарь</button>
       <button class="nav-tab" onclick="showPage('together',this)">Вместе</button>
+      <button class="nav-tab" onclick="showPage('question',this)">Вопрос дня</button>
       <button class="nav-tab" onclick="showPage('letters',this)">Письма</button>
       <button class="nav-tab" onclick="showPage('photos',this)">Фото</button>
       <button class="nav-tab" onclick="showPage('music',this)">Музыка</button>
@@ -741,6 +766,12 @@ body.lightbox-open .modal{background:#0a0f16!important;}
     </div>
     <div class="lt-intro">Капсулы времени друг для друга. Напиши письмо и выбери дату, когда его можно будет открыть — до этого дня оно останется запечатанным.</div>
     <div class="lt-grid" id="lt-grid"></div>
+  </div>
+
+  <div id="page-question" class="page">
+    <div class="lt-top"><div class="page-title">Вопрос дня</div></div>
+    <div class="lt-intro">Каждый день — новый вопрос. Ответьте оба и увидите ответы друг друга.</div>
+    <div id="q-wrap"></div>
   </div>
 
   <div id="page-photos" class="page">
@@ -911,6 +942,7 @@ function refreshAll(){
   else if(active.id==='page-letters')renderLetters();
   else if(active.id==='page-photos')renderPhotos();
   else if(active.id==='page-music')renderMusic();
+  else if(active.id==='page-question')renderQuestion();
 }
 /* called by the Firebase module when remote data arrives */
 window.__applyRemote=function(data){
@@ -953,6 +985,7 @@ function showPage(id,btn){
   if(id==='letters')renderLetters();
   if(id==='photos')renderPhotos();
   if(id==='music')renderMusic();
+  if(id==='question')renderQuestion();
 }
 
 /* ===== CALENDAR ===== */
@@ -1442,6 +1475,110 @@ function addTrack(){
 function delTrack(id){
   if(!confirm('Удалить трек?'))return;
   let arr=ld('tracks',[]);arr=arr.filter(x=>x.id!==id);sv('tracks',arr);renderMusic();
+}
+
+/* ===== QUESTION OF DAY ===== */
+const QUESTIONS=[
+  'Что в нас тебя сегодня радует больше всего?',
+  'Какое наше совместное воспоминание ты пересматриваешь в голове чаще всего?',
+  'Куда бы ты хотел(а) сбежать вдвоём прямо сейчас?',
+  'Что я делаю, от чего тебе становится тепло?',
+  'О чём ты мечтаешь, но редко говоришь вслух?',
+  'Какая мелочь в быту вдвоём тебе особенно дорога?',
+  'Что бы ты хотел(а) попробовать вместе впервые?',
+  'За что ты бы хотел(а) сказать мне спасибо сегодня?',
+  'Какой была бы наша идеальная суббота?',
+  'Что тебя сегодня тревожит — давай разделим?',
+  'Какую песню ты бы поставил(а) под наш день сегодня?',
+  'Что нового ты узнал(а) обо мне за последнее время?',
+  'Какой комплимент ты давно хотел(а) мне сказать?',
+  'Если бы у нас был лишний свободный день — как проведём?',
+  'Что заставило тебя улыбнуться за сегодня?',
+  'Какую привычку ты хотел(а) бы завести вдвоём?',
+  'Каким ты видишь нас через 5 лет?',
+  'Что для тебя значит «дом», когда мы вместе?',
+  'Какое блюдо приготовим вместе на выходных?',
+  'За что ты гордишься нами как парой?',
+  'Какой самый смешной момент был у нас недавно?',
+  'Что бы ты изменил(а) в нашем обычном дне?',
+  'Какое место в городе стало «нашим»?',
+  'Что тебе сегодня нужно от меня — забота, тишина или приключение?',
+  'Какой подарок не материальный ты бы хотел(а) получить?',
+  'Чем ты восхищаешься во мне как в человеке?',
+  'Какой ритуал перед сном тебе нравится больше всего?',
+  'Что бы ты загадал(а), если бы нашёл(ла) лампу с джинном — про нас?',
+  'Какой момент дня ты ждёшь, чтобы рассказать мне?',
+  'Что бы ты хотел(а) делать вместе чаще?'
+];
+function todayKey(){const n=new Date();return `${n.getFullYear()}-${n.getMonth()}-${n.getDate()}`;}
+function qIndexFor(dateObj){
+  // стабильный индекс по числу дней от эпохи
+  const days=Math.floor(dateObj.getTime()/86400000);
+  return ((days%QUESTIONS.length)+QUESTIONS.length)%QUESTIONS.length;
+}
+let _qWho=localStorage.getItem('q_who')||'d';
+function qSetWho(w){_qWho=w;localStorage.setItem('q_who',w);renderQuestion();}
+function renderQuestion(){
+  const wrap=document.getElementById('q-wrap');
+  const now=new Date();
+  const tkey=todayKey();
+  const data=ld('questions',{}); // {dateKey:{d:'',o:''}}
+  const todayIdx=qIndexFor(now);
+  const td=data[tkey]||{};
+  const myAns=td[_qWho]||'';
+  const bothExist = !!td.d && !!td.o;
+  function ansBlock(who){
+    const name=who==='d'?'Дима':'Оля';
+    const val=td[who]||'';
+    if(!val) return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-empty">ещё не ответил(а)</div></div>`;
+    // скрываем чужой ответ пока сам не ответил
+    const hide = who!==_qWho && !myAns;
+    return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-text${hide?' q-ans-hidden':''}">${hide?'ответ скрыт — сначала ответь сам(а)':esc(val)}</div></div>`;
+  }
+  let html=`<div class="q-card">
+    <div class="q-date">${now.getDate()} ${MRG[now.getMonth()]} · вопрос дня</div>
+    <div class="q-text">${esc(QUESTIONS[todayIdx])}</div>
+    <div class="q-answers">${ansBlock('d')}${ansBlock('o')}</div>
+    <div class="q-form">
+      <div class="q-who-row">
+        <button class="q-who-btn ${_qWho==='d'?'sel':''}" onclick="qSetWho('d')">Я Дима</button>
+        <button class="q-who-btn ${_qWho==='o'?'sel':''}" onclick="qSetWho('o')">Я Оля</button>
+      </div>
+      <textarea id="q-input" placeholder="Твой ответ...">${esc(myAns)}</textarea>
+      <div class="q-who-row"><button class="btn-primary" style="flex:1" onclick="saveAnswer()">${myAns?'Обновить ответ':'Ответить'}</button></div>
+      <div class="q-hint">${bothExist?'✓ Оба ответили — ответы открыты':'Ответы откроются, когда ответите оба'}</div>
+    </div>
+  </div>`;
+  // история прошлых дней (где есть хоть один ответ), новые сверху
+  const past=Object.keys(data).filter(k=>k!==tkey).sort((a,b)=>{
+    const pa=a.split('-').map(Number),pb=b.split('-').map(Number);
+    return new Date(pb[0],pb[1],pb[2])-new Date(pa[0],pa[1],pa[2]);
+  });
+  if(past.length){
+    html+=`<div class="q-past-head">архив</div>`;
+    past.forEach(k=>{
+      const p=k.split('-').map(Number),dObj=new Date(p[0],p[1],p[2]);
+      const idx=qIndexFor(dObj),e=data[k];
+      html+=`<div class="q-card">
+        <div class="q-date">${dObj.getDate()} ${MRG[dObj.getMonth()]} ${dObj.getFullYear()}</div>
+        <div class="q-text" style="font-size:18px">${esc(QUESTIONS[idx])}</div>
+        <div class="q-answers">
+          <div class="q-ans d"><div class="q-ans-who">Дима</div><div class="${e.d?'q-ans-text':'q-ans-empty'}">${e.d?esc(e.d):'—'}</div></div>
+          <div class="q-ans o"><div class="q-ans-who">Оля</div><div class="${e.o?'q-ans-text':'q-ans-empty'}">${e.o?esc(e.o):'—'}</div></div>
+        </div></div>`;
+    });
+  }
+  wrap.innerHTML=html;
+}
+function saveAnswer(){
+  const v=document.getElementById('q-input').value.trim();
+  const data=ld('questions',{});
+  const tkey=todayKey();
+  if(!data[tkey])data[tkey]={};
+  data[tkey][_qWho]=v;
+  sv('questions',data);
+  if(window.playTick)playTick();
+  renderQuestion();
 }
 
 /* ===== ACHIEVEMENTS ===== */
