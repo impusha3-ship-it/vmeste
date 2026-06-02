@@ -1236,6 +1236,16 @@ function petGain(key,amount,silent){
   const act=document.querySelector('.page.active');
   if(act&&act.id==='page-pet')renderPet();
 }
+function petLose(key,amount){
+  const p=petData();
+  if(!p.claimed[key])return; // не начислялось — нечего отнимать
+  delete p.claimed[key];
+  p.xp=Math.max(0,p.xp-amount);
+  sv('pet',p);
+  petToast('−'+amount+' XP');
+  const act=document.querySelector('.page.active');
+  if(act&&act.id==='page-pet')renderPet();
+}
 function petToast(txt){
   const t=document.createElement('div');t.className='pet-toast';t.textContent=txt;
   document.body.appendChild(t);
@@ -1283,10 +1293,13 @@ function tog(d,who,el){
   v[who]=el.checked;
   sv(k,v);
   if(el.checked)playTick();
+  const key=`${cy}-${cm}-${d}`;
   if(el.checked){
-    const key=`${cy}-${cm}-${d}`;
     petGain('day_'+who+'_'+key,XP.day);
     if(v.d&&v.o)petGain('both_'+key,XP.both);
+  }else{
+    petLose('day_'+who+'_'+key,XP.day);
+    if(was)petLose('both_'+key,XP.both); // пара распалась — снимаем бонус
   }
   if(el.checked && v.d && v.o && !was){
     const r=el.getBoundingClientRect();
@@ -1529,6 +1542,7 @@ function delLetter(a,b){
   if(a&&typeof a==='object'){ev=a;id=b;ev.stopPropagation();}
   if(!confirm('Удалить это письмо навсегда?'))return;
   let letters=ld('letters',[]);letters=letters.filter(x=>x.id!==id);sv('letters',letters);
+  petLose('letter_'+id,XP.letter);
   closeModal();renderLetters();
 }
 function fmtDate(s){const d=new Date(s+'T00:00:00');return `${d.getDate()} ${MRG[d.getMonth()]} ${d.getFullYear()}`;}
@@ -1595,7 +1609,7 @@ function addPhoto(){
 function delPhoto(e,id){
   e.stopPropagation();
   if(!confirm('Удалить это фото?'))return;
-  let arr=ld('photos',[]);arr=arr.filter(x=>x.id!==id);sv('photos',arr);renderPhotos();
+  let arr=ld('photos',[]);arr=arr.filter(x=>x.id!==id);sv('photos',arr);petLose('photo_'+id,XP.photo);renderPhotos();
 }
 
 /* ===== MUSIC ===== */
@@ -1687,7 +1701,7 @@ function addTrack(){
 }
 function delTrack(id){
   if(!confirm('Удалить трек?'))return;
-  let arr=ld('tracks',[]);arr=arr.filter(x=>x.id!==id);sv('tracks',arr);renderMusic();
+  let arr=ld('tracks',[]);arr=arr.filter(x=>x.id!==id);sv('tracks',arr);petLose('track_'+id,XP.track);renderMusic();
 }
 
 /* ===== QUESTION OF DAY ===== */
@@ -2068,6 +2082,7 @@ function renderAch(){
         if(a.id==='a29'){return;} // auto-only: unlock by 30-day streak
         const d2=ld('ach',{});const willDo=!d2[a.id];d2[a.id]=willDo;sv('ach',d2);renderAch();
         if(willDo){const r=c.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2);playAch();petGain('ach_'+a.id,XP.ach);}
+        else{petLose('ach_'+a.id,XP.ach);}
       };
       gr.appendChild(c);
     });
@@ -2118,7 +2133,7 @@ function delAch(e,id){
   e.stopPropagation();
   if(!confirm('Удалить эту ачивку?'))return;
   let ca=getCustomAchs();ca=ca.filter(x=>x.id!==id);sv('customAchs',ca);
-  const done=ld('ach',{});delete done[id];sv('ach',done);
+  const done=ld('ach',{});if(done[id])petLose('ach_'+id,XP.ach);delete done[id];sv('ach',done);
   renderAch();
 }
 
