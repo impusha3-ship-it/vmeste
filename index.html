@@ -93,9 +93,66 @@ h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
 .login-subtitle{font-family:'Jost',sans-serif;font-size:11px;font-weight:400;letter-spacing:0.4em;text-transform:uppercase;color:var(--ink4);}
 .login-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0.25rem auto;}
 .login-form{display:flex;flex-direction:column;align-items:center;gap:1.25rem;margin-top:0.5rem;}
-.who-pick{display:flex;gap:10px;}
-.who-opt{background:transparent;border:1px solid var(--border2);color:var(--ink3);font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1.4rem;cursor:pointer;transition:all .2s;}
-.who-opt.sel{border-color:var(--gold);color:var(--gold);box-shadow:0 0 12px -3px rgba(0,240,255,0.7);background:rgba(0,240,255,0.06);}
+/* ===== SPLIT SELECT (cyberpunk) ===== */
+#login-step-who{position:fixed;inset:0;z-index:50;display:flex;padding:0;gap:0;background:#04060c;}
+.who-opt{position:relative;flex:1 1 50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;border:none;cursor:pointer;overflow:hidden;background:#04060c;transition:flex-grow .55s cubic-bezier(0.22,1,0.36,1),filter .45s;}
+/* animated cyberpunk backgrounds */
+.who-opt::before{content:'';position:absolute;inset:0;z-index:0;opacity:0.9;transition:opacity .45s,transform .8s ease;background-size:cover;background-position:center;}
+.who-opt::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.18) 0px,rgba(0,0,0,0.18) 1px,transparent 2px,transparent 4px);mix-blend-mode:overlay;}
+/* Дима — мужской неон: голубой/электрик, жёсткая сетка */
+.who-d::before{
+  background-color:#02060f;
+  background-image:
+    linear-gradient(125deg,rgba(0,180,255,0.10),transparent 55%),
+    radial-gradient(circle at 30% 80%,rgba(0,240,255,0.35),transparent 60%),
+    radial-gradient(circle at 75% 20%,rgba(40,90,255,0.30),transparent 55%),
+    linear-gradient(rgba(0,240,255,0.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,240,255,0.08) 1px,transparent 1px);
+  background-size:cover,cover,cover,42px 42px,42px 42px;
+}
+/* Оля — женский неон: розовый/маджента/фиолет, мягкие ауры */
+.who-o::before{
+  background-color:#0c0212;
+  background-image:
+    linear-gradient(235deg,rgba(255,80,200,0.12),transparent 55%),
+    radial-gradient(circle at 70% 75%,rgba(255,42,140,0.40),transparent 60%),
+    radial-gradient(circle at 25% 25%,rgba(170,70,255,0.34),transparent 58%),
+    radial-gradient(circle at 50% 50%,rgba(255,150,220,0.10),transparent 70%);
+  background-size:cover;
+}
+.who-name{position:relative;z-index:2;font-family:'Tektur',sans-serif;font-weight:800;font-size:clamp(48px,9vw,120px);letter-spacing:0.08em;color:#fff;line-height:0.9;transition:transform .45s cubic-bezier(0.22,1,0.36,1),text-shadow .45s;}
+.who-d .who-name{text-shadow:0 0 6px rgba(0,240,255,0.9),0 0 26px rgba(0,240,255,0.6),0 0 60px rgba(0,160,255,0.4);}
+.who-o .who-name{text-shadow:0 0 6px rgba(255,60,170,0.95),0 0 26px rgba(255,60,170,0.65),0 0 60px rgba(190,70,255,0.45);}
+.who-hint{position:relative;z-index:2;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.4em;text-transform:uppercase;color:rgba(255,255,255,0.55);opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;}
+.who-av{display:none;}
+/* divider seam */
+#login-step-who::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;z-index:5;transform:translateX(-50%);background:linear-gradient(180deg,transparent,rgba(255,255,255,0.5),transparent);box-shadow:0 0 18px rgba(255,255,255,0.4);transition:opacity .45s;pointer-events:none;}
+/* hover: expand hovered half, dim the other */
+#login-step-who:hover .who-opt{flex-grow:0.7;filter:brightness(0.4) saturate(0.6);}
+#login-step-who .who-opt:hover{flex-grow:1.6;filter:brightness(1.12) saturate(1.15);}
+.who-opt:hover::before{opacity:1;transform:scale(1.06);}
+.who-opt:hover .who-name{transform:scale(1.08);}
+.who-opt:hover .who-hint{opacity:1;transform:translateY(0);}
+.who-opt:active .who-name{transform:scale(0.97);}
+@media(max-width:640px){
+  #login-step-who{flex-direction:column;}
+  #login-step-who::after{top:50%;bottom:auto;left:0;right:0;width:auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent);}
+  .who-name{font-size:clamp(52px,16vw,90px);}
+  /* фон ярче и подсказка видна сразу — на тач-экранах нет наведения */
+  .who-opt::before{opacity:1;}
+  .who-hint{opacity:1;transform:none;font-size:11px;letter-spacing:0.45em;}
+  .who-d .who-name{text-shadow:0 0 5px rgba(0,240,255,0.9),0 0 18px rgba(0,240,255,0.55);}
+  .who-o .who-name{text-shadow:0 0 5px rgba(255,60,170,0.95),0 0 18px rgba(255,60,170,0.6);}
+}
+/* на тач-устройствах «наведение» = касание: подсветка нажатой половины */
+@media(hover:none){
+  #login-step-who:hover .who-opt{flex-grow:1;filter:none;}
+  .who-opt:active{filter:brightness(1.15) saturate(1.15);}
+  .who-opt:active::before{opacity:1;}
+}
+@media(prefers-reduced-motion:reduce){
+  .who-opt,.who-opt::before,.who-name{transition:none!important;}
+}
 #backup-btn.bk-due{border-color:var(--rose)!important;color:var(--rose)!important;animation:bkPulse 1.8s ease-in-out infinite;}
 @keyframes bkPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,42,109,0.5)}50%{box-shadow:0 0 14px 1px rgba(255,42,109,0.8)}}
 .login-form input{
@@ -782,14 +839,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <div class="login-monogram">О <em>&</em> Д</div>
     <div class="login-subtitle">личное пространство</div>
     <div class="login-divider"></div>
-    <div class="login-form">
-      <div class="who-pick">
-        <button type="button" class="who-opt" id="who-d" onclick="pickWho('d')">Дима</button>
-        <button type="button" class="who-opt" id="who-o" onclick="pickWho('o')">Оля</button>
-      </div>
+    <div class="login-form" id="login-step-pwd">
       <input type="password" id="pwd" maxlength="8" placeholder="· · · ·" onkeydown="if(event.key==='Enter')login()"/>
       <button class="login-btn" onclick="login()">Войти</button>
       <div class="login-err" id="lerr"></div>
+    </div>
+    <div id="login-step-who" style="display:none">
+      <button type="button" class="who-opt who-d" id="who-d" onclick="enterAs('d')">
+        <span class="who-name">ДИМА</span>
+        <span class="who-hint">войти ▸</span>
+      </button>
+      <button type="button" class="who-opt who-o" id="who-o" onclick="enterAs('o')">
+        <span class="who-name">ОЛЯ</span>
+        <span class="who-hint">войти ▸</span>
+      </button>
     </div>
   </div>
 </div>
@@ -1085,17 +1148,11 @@ function whoName(w){return w==='o'?'Оля':'Дима';}
 function pickWho(w){ME=w;localStorage.setItem('me',w);
   const d=document.getElementById('who-d'),o=document.getElementById('who-o');
   if(d)d.classList.toggle('sel',w==='d');if(o)o.classList.toggle('sel',w==='o');}
+// шаг 1: проверка пароля — при успехе показываем вопрос «кто заходит?»
 function login(){
   if(document.getElementById('pwd').value===PWD){
-    localStorage.setItem('me',ME);
-    document.getElementById('login').style.display='none';
-    const app=document.getElementById('app');
-    app.style.display='flex';app.style.flexDirection='column';
-    updateSoundIcon();
-    const n=new Date();cy=n.getFullYear();cm=n.getMonth();
-    renderCal();renderAch();
-    try{refreshBackupBadge();}catch(e){}
-    try{petBackfill();}catch(e){}
+    document.getElementById('login-step-pwd').style.display='none';
+    document.getElementById('login-step-who').style.display='flex';
   } else {
     const e=document.getElementById('lerr');
     e.textContent='Неверный пароль';
@@ -1104,9 +1161,25 @@ function login(){
     setTimeout(()=>e.textContent='',2000);
   }
 }
+// шаг 2: выбор аккаунта — только теперь заходим на сайт
+function enterAs(w){
+  pickWho(w);
+  localStorage.setItem('me',ME);
+  document.getElementById('login').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';app.style.flexDirection='column';
+  updateSoundIcon();
+  const n=new Date();cy=n.getFullYear();cm=n.getMonth();
+  renderCal();renderAch();
+  try{refreshBackupBadge();}catch(e){}
+  try{petBackfill();}catch(e){}
+}
 function logout(){
   document.getElementById('login').style.display='flex';
   document.getElementById('app').style.display='none';
+  // сброс на шаг ввода пароля
+  document.getElementById('login-step-pwd').style.display='flex';
+  document.getElementById('login-step-who').style.display='none';
   document.getElementById('pwd').value='';
   if(tgTimer){clearInterval(tgTimer);tgTimer=null;}
 }
@@ -2553,11 +2626,12 @@ function confetti(x,y){
     o.animate([{opacity:0},{opacity:1},{opacity:1},{opacity:0}],
       {duration:kind==='grant'?1300:850,easing:'ease'}).onfinish=function(){o.remove();};
   }
+  // после ввода пароля: код принят (показан выбор аккаунта) или отклонён
   function afterAuth(){
     setTimeout(function(){
-      var app=document.getElementById('app');
-      var open=app && getComputedStyle(app).display!=='none';
-      if(open) flash('grant','ДОСТУП РАЗРЕШЁН','ACCESS GRANTED');
+      var who=document.getElementById('login-step-who');
+      var ok=who && getComputedStyle(who).display!=='none';
+      if(ok) flash('grant','КОД ПРИНЯТ','CODE ACCEPTED');
       else flash('deny','ДОСТУП ОТКЛОНЁН','ACCESS DENIED');
     },25);
   }
@@ -2565,6 +2639,12 @@ function confetti(x,y){
   if(btn) btn.addEventListener('click',afterAuth);
   var pwd=document.getElementById('pwd');
   if(pwd) pwd.addEventListener('keydown',function(e){if(e.key==='Enter')afterAuth();});
+  // после выбора аккаунта: вход разрешён
+  document.querySelectorAll('#login-step-who .who-opt').forEach(function(b){
+    b.addEventListener('click',function(){
+      flash('grant','ДОСТУП РАЗРЕШЁН','ACCESS GRANTED');
+    });
+  });
 })();
 </script>
 
@@ -2591,13 +2671,16 @@ function confetti(x,y){
   var btn=document.querySelector('.login-btn');
   function authBeep(){
     setTimeout(function(){
-      var app=document.getElementById('app');
-      if(app&&getComputedStyle(app).display!=='none'){ beep(660,0.09,'square',0.07); beep(990,0.14,'square',0.07,0.10); }
+      var who=document.getElementById('login-step-who');
+      if(who&&getComputedStyle(who).display!=='none'){ beep(660,0.09,'square',0.07); beep(990,0.14,'square',0.07,0.10); }
       else { beep(150,0.20,'sawtooth',0.09); }
     },45);
   }
   if(btn) btn.addEventListener('click',authBeep);
   if(pwd) pwd.addEventListener('keydown',function(e){if(e.key==='Enter')authBeep();});
+  document.querySelectorAll('#login-step-who .who-opt').forEach(function(b){
+    b.addEventListener('click',function(){ beep(660,0.09,'square',0.07); beep(990,0.14,'square',0.07,0.10); });
+  });
 
   /* ---- decrypt / scramble numbers ---- */
   var CH='アイウエオカキクケサシスセタチツ0123456789#%&@<>/';
