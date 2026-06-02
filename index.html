@@ -801,6 +801,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
       <button class="nav-tab active" onclick="showPage('calendar',this)">Календарь</button>
       <button class="nav-tab" onclick="showPage('together',this)">Вместе</button>
       <button class="nav-tab" onclick="showPage('question',this)">Вопрос дня</button>
+      <button class="nav-tab" onclick="showPage('tier',this)">Тирлисты</button>
       <button class="nav-tab" onclick="showPage('pet',this)">Питомец</button>
       <button class="nav-tab" onclick="showPage('letters',this)">Письма</button>
       <button class="nav-tab" onclick="showPage('photos',this)">Фото</button>
@@ -886,6 +887,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <div class="lt-top"><div class="page-title">Вопрос дня</div></div>
     <div class="lt-intro">Каждый день — новый вопрос. Ответьте оба и увидите ответы друг друга.</div>
     <div id="q-wrap"></div>
+  </div>
+
+  <div id="page-tier" class="page">
+    <div class="lt-top"><div class="page-title">Тирлисты</div></div>
+    <div class="lt-intro">Каждую неделю — новый тирлист. Разложите элементы по тирам (S/A/B/C/D — названия можно менять), а когда закончите — откроется раскладка второго. Внизу голосуйте за тему следующей недели.</div>
+    <div id="tl-wrap"></div>
   </div>
 
   <div id="page-pet" class="page">
@@ -1062,6 +1069,7 @@ function refreshAll(){
   else if(active.id==='page-photos')renderPhotos();
   else if(active.id==='page-music')renderMusic();
   else if(active.id==='page-question')renderQuestion();
+  else if(active.id==='page-tier')renderTier();
   else if(active.id==='page-pet')renderPet();
 }
 /* called by the Firebase module when remote data arrives */
@@ -1118,6 +1126,7 @@ function showPage(id,btn){
   if(id==='photos')renderPhotos();
   if(id==='music')renderMusic();
   if(id==='question')renderQuestion();
+  if(id==='tier')renderTier();
   if(id==='pet')renderPet();
 }
 
@@ -1218,7 +1227,7 @@ function toggleSound(){localStorage.setItem('muted',soundOn()?'1':'0');updateSou
 function updateSoundIcon(){const b=document.getElementById('sound-btn');if(b)b.textContent=soundOn()?'🔊':'🔇';}
 
 /* ===== PET XP ENGINE ===== */
-const XP={day:10,both:10,question:15,ach:50,photo:20,track:15,letter:25};
+const XP={day:10,both:10,question:15,ach:50,photo:20,track:15,letter:25,tier:30};
 function petData(){return ld('pet',{xp:0,claimed:{}});}
 // порог суммарного XP для достижения уровня n (n>=1)
 function lvlThreshold(n){let t=0;for(let i=1;i<n;i++)t+=Math.round(80*Math.pow(1.45,i-1));return t;}
@@ -1912,6 +1921,276 @@ function saveAnswer(){
   renderQuestion();
 }
 
+/* ===== TIER LISTS ===== */
+const THEMES=[
+ {id:'fruits',emoji:'🍓',title:'Фрукты',items:['Банан','Яблоко','Манго','Клубника','Виноград','Арбуз','Ананас','Апельсин','Киви','Персик','Груша','Вишня','Дыня','Малина','Гранат','Маракуйя','Хурма','Слива','Лимон','Кокос','Мандарин','Инжир']},
+ {id:'vegetables',emoji:'🥦',title:'Овощи',items:['Картофель','Морковь','Брокколи','Помидор','Огурец','Болгарский перец','Баклажан','Кабачок','Лук','Чеснок','Капуста','Цветная капуста','Свёкла','Редис','Тыква','Кукуруза','Горох','Шпинат','Авокадо','Сельдерей','Спаржа','Грибы']},
+ {id:'fastfood',emoji:'🍔',title:'Фастфуд',items:['Бургер','Картошка фри','Пицца','Хот-дог','Шаурма','Наггетсы','Чизбургер','Тако','Буррито','Сэндвич','Кесадилья','Луковые кольца','Чикен-ролл','Гирос','Корн-дог','Чили фри','Фиш-н-чипс','Дёнер','Поке','Биг-мак']},
+ {id:'pizza',emoji:'🍕',title:'Начинка пиццы',items:['Пепперони','Моцарелла','Грибы','Ветчина','Ананас','Бекон','Курица','Оливки','Помидоры','Лук','Перец','Колбаски','Анчоусы','Базилик','Кукуруза','Халапеньо','Шпинат','Креветки','Руккола','Чоризо']},
+ {id:'icecream',emoji:'🍦',title:'Вкусы мороженого',items:['Ваниль','Шоколад','Клубника','Фисташка','Карамель','Кофе','Мята-шоколад','Манго','Кокос','Банан','Печенье','Солёная карамель','Малина','Лимон','Черника','Тирамису','Грецкий орех','Йогурт','Ром-изюм','Зелёный чай']},
+ {id:'sweets',emoji:'🍫',title:'Сладости',items:['Молочный шоколад','Тёмный шоколад','Мармелад','Зефир','Печенье','Чупа-чупс','Жвачка','Карамель','Халва','Пастила','Вафли','Пряник','Безе','Трюфели','Драже','Ирис','Нуга','Маршмеллоу','Леденцы','Шоколадный батончик']},
+ {id:'drinks',emoji:'🥤',title:'Напитки',items:['Кола','Апельсиновый сок','Лимонад','Чай','Кофе','Какао','Молочный коктейль','Энергетик','Минералка','Морс','Квас','Компот','Смузи','Тоник','Айран','Кефир','Горячий шоколад','Спрайт','Холодный чай','Кокосовая вода']},
+ {id:'cuisine',emoji:'🌍',title:'Кухни мира',items:['Итальянская','Японская','Грузинская','Китайская','Мексиканская','Тайская','Французская','Индийская','Турецкая','Корейская','Греческая','Американская','Испанская','Вьетнамская','Русская','Узбекская','Ливанская','Немецкая','Бразильская','Марокканская']},
+ {id:'breakfast',emoji:'🍳',title:'Завтраки',items:['Яичница','Омлет','Блины','Сырники','Овсянка','Гранола','Тосты','Бутерброд','Каша','Йогурт','Круассан','Вафли','Панкейки','Творог','Яйцо всмятку','Бекон','Глазунья','Мюсли','Запеканка','Авокадо-тост']},
+ {id:'desserts',emoji:'🍰',title:'Десерты',items:['Тирамису','Чизкейк','Наполеон','Эклер','Маффин','Брауни','Панна-котта','Макарон','Профитроли','Медовик','Крем-брюле','Штрудель','Пахлава','Тарт','Капкейк','Пончик','Фондан','Безе','Желе','Кейк-попс']},
+ {id:'cheese',emoji:'🧀',title:'Сыры',items:['Моцарелла','Чеддер','Пармезан','Бри','Камамбер','Гауда','Фета','Дорблю','Маскарпоне','Рикотта','Эдам','Косичка','Адыгейский','Сулугуни','Эмменталь','Горгонзола','Маасдам','Плавленый','Творожный','Качотта']},
+ {id:'berries',emoji:'🫐',title:'Ягоды',items:['Клубника','Черника','Малина','Ежевика','Голубика','Смородина','Крыжовник','Вишня','Черешня','Брусника','Клюква','Земляника','Облепиха','Виноград','Шелковица','Калина','Морошка','Жимолость']},
+ {id:'nuts',emoji:'🥜',title:'Орехи и семечки',items:['Арахис','Грецкий','Миндаль','Фундук','Кешью','Фисташки','Кедровый','Макадамия','Бразильский','Пекан','Каштан','Кокос','Кунжут','Тыквенные семечки','Подсолнечник','Чиа']},
+ {id:'sushi',emoji:'🍣',title:'Суши и роллы',items:['Филадельфия','Калифорния','Унаги','Темпура','Спайси','Сяке','Магуро','Эби','Дракон','Запечённый ролл','Маки','Нигири','Гункан','Авокадо-ролл','Тобико','Канада']},
+ {id:'pasta',emoji:'🍝',title:'Виды пасты',items:['Спагетти','Пенне','Фузилли','Тальятелле','Фарфалле','Лазанья','Равиоли','Ньокки','Феттучини','Каннеллони','Тортеллини','Орзо','Ригатони','Лингвини','Букатини','Паппарделле']},
+ {id:'coffee',emoji:'☕',title:'Кофе',items:['Эспрессо','Капучино','Латте','Американо','Раф','Флэт-уайт','Мокко','Макиато','Ристретто','Гляссе','Айриш','Кортадо','Колд-брю','Латте-макиато','Доппио','Аффогато']},
+ {id:'tea',emoji:'🍵',title:'Чай',items:['Чёрный','Зелёный','Улун','Пуэр','Мятный','Ромашковый','Каркаде','Эрл Грей','Жасминовый','Имбирный','Матча','Иван-чай','Облепиховый','С бергамотом','Ягодный','Молочный улун']},
+ {id:'soup',emoji:'🍲',title:'Супы',items:['Борщ','Солянка','Грибной','Куриный','Харчо','Том-ям','Гороховый','Сырный','Окрошка','Уха','Минестроне','Гаспачо','Рассольник','Щи','Крем-суп','Лагман','Рамен','Фо-бо']},
+ {id:'animals',emoji:'🐾',title:'Животные',items:['Кошка','Собака','Лев','Тигр','Слон','Панда','Лиса','Волк','Медведь','Заяц','Енот','Олень','Жираф','Коала','Ленивец','Выдра','Ёж','Белка','Пингвин','Дельфин','Тюлень','Капибара']},
+ {id:'dogs',emoji:'🐶',title:'Породы собак',items:['Лабрадор','Хаски','Корги','Овчарка','Шпиц','Такса','Бульдог','Чихуахуа','Мопс','Золотистый ретривер','Доберман','Джек-рассел','Самоед','Бигль','Йоркширский терьер','Акита','Далматинец','Пудель']},
+ {id:'cats',emoji:'🐱',title:'Породы кошек',items:['Британская','Шотландская','Мейн-кун','Сфинкс','Сиамская','Бенгальская','Персидская','Рэгдолл','Абиссинская','Норвежская','Русская голубая','Бирманская','Корниш-рекс','Манчкин','Турецкая ангора','Саванна']},
+ {id:'sea',emoji:'🐠',title:'Морские обитатели',items:['Дельфин','Кит','Акула','Осьминог','Морская черепаха','Медуза','Морской конёк','Краб','Кальмар','Скат','Морская звезда','Тюлень','Касатка','Морж','Рыба-клоун','Лобстер','Мурена','Манта']},
+ {id:'birds',emoji:'🦜',title:'Птицы',items:['Орёл','Сова','Попугай','Фламинго','Павлин','Колибри','Пингвин','Лебедь','Воробей','Ворон','Сокол','Тукан','Голубь','Аист','Снегирь','Утка','Чайка','Дятел']},
+ {id:'colors',emoji:'🎨',title:'Цвета',items:['Красный','Синий','Зелёный','Жёлтый','Фиолетовый','Розовый','Оранжевый','Голубой','Бирюзовый','Чёрный','Белый','Серый','Коричневый','Бордовый','Мятный','Лавандовый','Золотой','Серебряный','Бежевый','Изумрудный']},
+ {id:'months',emoji:'📅',title:'Месяцы года',items:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']},
+ {id:'emotions',emoji:'😊',title:'Эмоции',items:['Радость','Грусть','Злость','Удивление','Любовь','Страх','Спокойствие','Восторг','Скука','Гордость','Стыд','Зависть','Благодарность','Тревога','Вдохновение','Умиление','Азарт','Ностальгия','Уют','Эйфория']},
+ {id:'superpowers',emoji:'🦸',title:'Суперсилы',items:['Полёт','Невидимость','Телепортация','Чтение мыслей','Суперсила','Остановка времени','Регенерация','Телекинез','Управление огнём','Управление водой','Суперскорость','Превращение','Понимание языков','Управление погодой','Неуязвимость','Призыв предметов']},
+ {id:'moviegenres',emoji:'🎬',title:'Жанры фильмов',items:['Комедия','Драма','Ужасы','Боевик','Фантастика','Фэнтези','Триллер','Мелодрама','Детектив','Аниме','Мультфильм','Документальный','Приключения','Мюзикл','Криминал','Исторический','Артхаус','Романтика']},
+ {id:'musicgenres',emoji:'🎵',title:'Жанры музыки',items:['Поп','Рок','Хип-хоп','Электроника','Джаз','Классика','Метал','Инди','R&B','Регги','Кантри','Панк','Лоу-фай','Фолк','Блюз','K-pop','Техно','Хаус']},
+ {id:'instruments',emoji:'🎸',title:'Музыкальные инструменты',items:['Гитара','Пианино','Скрипка','Барабаны','Флейта','Саксофон','Виолончель','Труба','Укулеле','Арфа','Аккордеон','Синтезатор','Бас-гитара','Кларнет','Балалайка','Гармонь']},
+ {id:'boardgames',emoji:'🎲',title:'Настольные игры',items:['Монополия','Уно','Дженга','Каркассон','Манчкин','Активити','Мафия','Шахматы','Шашки','Дурак','Покер','Скрэббл','Имаджинариум','Твистер','Эрудит','Колонизаторы']},
+ {id:'hobby',emoji:'🎯',title:'Хобби',items:['Рисование','Чтение','Готовка','Спорт','Музыка','Фотография','Путешествия','Танцы','Игры','Садоводство','Вязание','Бег','Йога','Рыбалка','Велосипед','Походы','Лепка','Каллиграфия']},
+ {id:'transport',emoji:'🚗',title:'Транспорт',items:['Машина','Велосипед','Самокат','Мотоцикл','Поезд','Самолёт','Корабль','Автобус','Метро','Трамвай','Такси','Яхта','Вертолёт','Скейт','Ролики','Электросамокат']},
+ {id:'countries',emoji:'✈️',title:'Страны мечты',items:['Япония','Италия','Франция','Исландия','Греция','Испания','Норвегия','Таиланд','Швейцария','Мальдивы','США','Грузия','Турция','Португалия','Канада','Новая Зеландия','ОАЭ','Бали']},
+ {id:'weather',emoji:'⛅',title:'Погода',items:['Солнечно','Дождь','Снег','Гроза','Туман','Ветер','Радуга','Жара','Мороз','Облачно','Метель','Роса','Ливень','Закат','Звёздная ночь','Первый снег']},
+ {id:'flowers',emoji:'🌸',title:'Цветы',items:['Роза','Тюльпан','Пион','Лилия','Орхидея','Ромашка','Подсолнух','Хризантема','Лаванда','Нарцисс','Гортензия','Сирень','Гвоздика','Ирис','Незабудка','Магнолия']},
+ {id:'space',emoji:'🪐',title:'Космос',items:['Меркурий','Венера','Земля','Марс','Юпитер','Сатурн','Уран','Нептун','Луна','Солнце','Плутон','Чёрная дыра','Млечный путь','Комета','Астероид','Туманность']},
+ {id:'subjects',emoji:'📚',title:'Школьные предметы',items:['Математика','Русский','Литература','История','Биология','Химия','Физика','География','Английский','Информатика','Физкультура','Музыка','ИЗО','Обществознание','Геометрия','Астрономия']},
+ {id:'chores',emoji:'🧹',title:'Домашние дела',items:['Мытьё посуды','Уборка','Готовка','Стирка','Глажка','Вынос мусора','Пылесос','Мытьё полов','Покупки','Полив цветов','Протирка пыли','Мытьё окон','Заправка кровати','Чистка ванной']},
+ {id:'gadgets',emoji:'📱',title:'Гаджеты',items:['Смартфон','Ноутбук','Наушники','Планшет','Умные часы','Телевизор','Колонка','Игровая консоль','Фотоаппарат','Электронная книга','Дрон','VR-очки','Робот-пылесос','Power bank','Клавиатура','Проектор']}
+];
+const TL_DEFAULT_LABELS=['S','A','B','C','D'];
+let tlView='me';   // 'me' | 'other' — локально
+let tlSel=null;    // выбранный элемент для перемещения (id вида 't3')
+
+function weekStart(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const dow=(x.getDay()+6)%7;x.setDate(x.getDate()-dow);return x;}
+function weekKey(d){const w=weekStart(d);return `${w.getFullYear()}-${w.getMonth()}-${w.getDate()}`;}
+function weekKeyOffset(n){const d=new Date();d.setDate(d.getDate()+n*7);return weekKey(d);}
+function tlWeekLabel(wkKey){const p=wkKey.split('-').map(Number);const a=new Date(p[0],p[1],p[2]);const b=new Date(a);b.setDate(b.getDate()+6);
+  if(a.getMonth()===b.getMonth())return `${a.getDate()}–${b.getDate()} ${MRG[a.getMonth()]}`;
+  return `${a.getDate()} ${MRG[a.getMonth()]} – ${b.getDate()} ${MRG[b.getMonth()]}`;}
+// детерминированный ГСЧ по строке-сиду — одинаков на обоих устройствах
+function tlHash(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function tlRng(seed){let s=seed>>>0;return function(){s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};}
+function tlShuffle(arr,seedStr){const a=arr.slice();const rng=tlRng(tlHash(seedStr));for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function tlPick(arr,seedStr){if(!arr.length)return null;return arr[Math.floor(tlRng(tlHash(seedStr))()*arr.length)];}
+function themeById(id){return THEMES.find(t=>t.id===id);}
+
+function tlData(){const d=ld('tierlists',{});if(!d.weeks)d.weeks={};if(!d.votes)d.votes={};return d;}
+// назначает тему текущей недели и кандидатов следующей; возвращает true если что-то изменилось
+function tlEnsure(d){
+  let changed=false;
+  const cw=weekKey(new Date());
+  const used=Object.keys(d.weeks).map(k=>d.weeks[k].themeId);
+  if(!d.weeks[cw]){
+    let themeId;
+    if(Object.keys(d.weeks).length===0 && !d.votes[cw]){
+      themeId='fruits'; // самый первый тирлист
+    } else {
+      const v=d.votes[cw];
+      if(v&&v.cands&&v.cands.length){
+        const both=v.cands.filter(id=>v.d&&v.d[id]&&v.o&&v.o[id]);
+        const any=v.cands.filter(id=>(v.d&&v.d[id])||(v.o&&v.o[id]));
+        const list=both.length?both:(any.length?any:v.cands);
+        themeId=tlPick(list,'pick'+cw);
+      } else {
+        const fresh=THEMES.map(t=>t.id).filter(id=>used.indexOf(id)<0);
+        themeId=tlPick(fresh.length?fresh:THEMES.map(t=>t.id),'pick'+cw);
+      }
+    }
+    if(!themeById(themeId))themeId='fruits';
+    d.weeks[cw]={themeId,labels:TL_DEFAULT_LABELS.slice(),place:{d:{},o:{}}};
+    used.push(themeId);changed=true;
+  }
+  const nw=weekKeyOffset(1);
+  if(!d.votes[nw]){
+    const pool=THEMES.map(t=>t.id).filter(id=>used.indexOf(id)<0);
+    const src=pool.length>=5?pool:THEMES.map(t=>t.id);
+    d.votes[nw]={cands:tlShuffle(src,'cand'+nw).slice(0,5),d:{},o:{}};
+    changed=true;
+  }
+  return changed;
+}
+
+function renderTier(){
+  const wrap=document.getElementById('tl-wrap');if(!wrap)return;
+  const d=tlData();
+  if(tlEnsure(d))sv('tierlists',d);
+  const cw=weekKey(new Date());
+  const wk=d.weeks[cw];
+  const theme=themeById(wk.themeId)||THEMES[0];
+  const labels=(wk.labels&&wk.labels.length)?wk.labels:TL_DEFAULT_LABELS;
+  if(!wk.place[ME])wk.place[ME]={};
+  const other=ME==='d'?'o':'d';
+  const myPlace=wk.place[ME]||{};
+  const otherPlace=wk.place[other]||{};
+  const myDone=Object.keys(myPlace).length;
+  const myComplete=myDone>=theme.items.length;
+  if(tlView==='other'&&!myComplete)tlView='me';
+  const showPlace=tlView==='me'?myPlace:otherPlace;
+  const editable=tlView==='me';
+
+  let html=`<div class="tl-card">
+    <div class="tl-week">${tlWeekLabel(cw)} · тирлист недели</div>
+    <div class="tl-theme"><span class="em">${theme.emoji}</span> ${esc(theme.title)}</div>
+    <div class="tl-prog">${myComplete?'✓ твоя раскладка готова':('разложено '+myDone+' / '+theme.items.length)}</div>
+    <div class="tl-btn-row">
+      <button class="tl-mini" onclick="tlEditLabels()">✎ Названия тиров</button>
+      ${myDone?'<button class="tl-mini" onclick="tlReset()">⟲ Сбросить мою</button>':''}
+    </div>
+  </div>`;
+
+  html+=`<div class="tl-viewtog">
+    <button class="${tlView==='me'?'on':''}" onclick="tlSetView('me')">Я · ${whoName(ME)}</button>
+    <button class="${tlView==='other'?'on':''}" onclick="tlSetView('other')">${whoName(other)}${myComplete?'':' 🔒'}</button>
+  </div>`;
+
+  if(tlView==='other'&&!myComplete){
+    html+=`<div class="tl-lockbox">Раскладка ${whoName(other)} откроется, когда ты разложишь все элементы 🔒</div>`;
+  } else {
+    if(editable&&tlSel!=null){
+      const sn=theme.items[parseInt(tlSel.slice(1),10)];
+      html+=`<div class="tl-hint">выбери тир для «${esc(sn)}» (или тапни «не распределено», чтобы убрать)</div>`;
+    } else if(editable){
+      html+=`<div class="tl-hint">тапни элемент, затем тир</div>`;
+    }
+    const armed=editable&&tlSel!=null?' tl-armed':'';
+    html+=`<div class="tl-tiers${armed}">`;
+    labels.forEach((lbl,ti)=>{
+      const inTier=theme.items.map((n,i)=>({n,i})).filter(o=>showPlace['t'+o.i]===ti);
+      html+=`<div class="tl-tier tlc${ti%5}" ${editable?`onclick="tlAssign(${ti})"`:''}>
+        <div class="tl-tier-lbl">${esc(lbl)}</div>
+        <div class="tl-tier-items">${inTier.map(o=>tlChip(o.n,o.i,editable)).join('')}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+    if(editable){
+      const pool=theme.items.map((n,i)=>({n,i})).filter(o=>showPlace['t'+o.i]===undefined);
+      html+=`<div class="tl-pool" onclick="tlToPool()">
+        <div class="tl-pool-head">не распределено (${pool.length})</div>
+        <div class="tl-tier-items">${pool.length?pool.map(o=>tlChip(o.n,o.i,true)).join(''):'<span class="tl-empty">всё разложено ✓</span>'}</div>
+      </div>`;
+    }
+  }
+
+  // ===== голосование за следующую неделю =====
+  const nw=weekKeyOffset(1);const v=d.votes[nw];
+  html+=`<div class="tl-vote-head">Тема следующей недели</div>
+    <div class="tl-vote-sub">Отметьте, что интересно. В понедельник выберется случайная из отмеченных обоими; если общих нет — из отмеченных хоть кем-то (${tlWeekLabel(nw)}).</div>`;
+  if(v&&v.cands){
+    v.cands.forEach(id=>{
+      const t=themeById(id);if(!t)return;
+      const mine=v[ME]&&v[ME][id];const oth=v[other]&&v[other][id];
+      html+=`<button class="tl-vote-item${mine?' on':''}" onclick="tlVote('${id}')">
+        <span class="tl-vote-check">${mine?'✓':''}</span>
+        <span class="tl-vote-emoji">${t.emoji}</span>
+        <span class="tl-vote-title">${esc(t.title)}</span>
+        <span class="tl-vote-flags">${mine?'<i class="'+ME+'">'+whoName(ME)+'</i>':''}${oth?'<i class="'+other+'">'+whoName(other)+'</i>':''}</span>
+      </button>`;
+    });
+  }
+
+  // ===== архив =====
+  const past=Object.keys(d.weeks).filter(k=>k!==cw).sort((a,b)=>{
+    const pa=a.split('-').map(Number),pb=b.split('-').map(Number);
+    return new Date(pb[0],pb[1],pb[2])-new Date(pa[0],pa[1],pa[2]);
+  });
+  if(past.length){
+    html+=`<div class="tl-arch-head">архив</div>`;
+    past.forEach(k=>{
+      const t=themeById(d.weeks[k].themeId);if(!t)return;
+      html+=`<button class="tl-arch-item" onclick="tlShowArchive('${k}')">${t.emoji} ${esc(t.title)} · ${tlWeekLabel(k)}</button>`;
+    });
+  }
+  wrap.innerHTML=html;
+}
+function tlChip(name,idx,editable){
+  const sel=tlSel==='t'+idx?' sel':'';
+  const cl=editable?` onclick="event.stopPropagation();tlSelect('t${idx}')"`:'';
+  return `<span class="tl-chip${sel}"${cl}>${esc(name)}</span>`;
+}
+function tlSetView(v){
+  if(v==='other'){
+    const d=tlData();const cw=weekKey(new Date());const wk=d.weeks[cw];if(!wk)return;
+    const theme=themeById(wk.themeId);const my=wk.place[ME]||{};
+    if(Object.keys(my).length<theme.items.length){
+      const other=ME==='d'?'o':'d';
+      alert('Сначала разложи свой тирлист полностью — потом откроется раскладка '+whoName(other));
+      return;
+    }
+  }
+  tlView=v;tlSel=null;renderTier();
+}
+function tlSelect(id){tlSel=(tlSel===id)?null:id;renderTier();}
+function tlAssign(ti){
+  if(tlSel==null)return;
+  const d=tlData();const cw=weekKey(new Date());const wk=d.weeks[cw];
+  if(!wk.place[ME])wk.place[ME]={};
+  wk.place[ME][tlSel]=ti;tlSel=null;
+  sv('tierlists',d);
+  tlMaybeXp(d,cw);
+  if(window.playTick)playTick();
+  renderTier();
+}
+function tlToPool(){
+  if(tlSel==null)return;
+  const d=tlData();const cw=weekKey(new Date());const wk=d.weeks[cw];
+  if(wk.place[ME])delete wk.place[ME][tlSel];
+  tlSel=null;sv('tierlists',d);renderTier();
+}
+function tlReset(){
+  if(!confirm('Сбросить твою раскладку этого тирлиста?'))return;
+  const d=tlData();const cw=weekKey(new Date());d.weeks[cw].place[ME]={};
+  tlSel=null;tlView='me';sv('tierlists',d);renderTier();
+}
+function tlMaybeXp(d,cw){
+  const wk=d.weeks[cw];const theme=themeById(wk.themeId);if(!theme)return;
+  if(Object.keys(wk.place[ME]||{}).length>=theme.items.length)petGain('tl_'+cw+'_'+ME,XP.tier);
+}
+function tlVote(id){
+  const d=tlData();const nw=weekKeyOffset(1);
+  if(!d.votes[nw])return;
+  if(!d.votes[nw][ME])d.votes[nw][ME]={};
+  d.votes[nw][ME][id]=!d.votes[nw][ME][id];
+  sv('tierlists',d);if(window.playTick)playTick();renderTier();
+}
+function tlEditLabels(){
+  const d=tlData();const cw=weekKey(new Date());const wk=d.weeks[cw];
+  const theme=themeById(wk.themeId);const labels=wk.labels||TL_DEFAULT_LABELS;
+  const rows=labels.map((l,i)=>`<input class="tl-lbl-inp" data-i="${i}" value="${esc(l)}" maxlength="14">`).join('');
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <h3>Названия тиров</h3><div class="m-sub">${esc(theme.title)}</div>
+    <div id="tl-lbl-rows" style="display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0">${rows}</div>
+    <div class="modal-actions"><button class="btn-ghost" onclick="closeModal()">Отмена</button><button class="btn-primary" onclick="tlSaveLabels()">Сохранить</button></div>`);
+}
+function tlSaveLabels(){
+  const inps=document.querySelectorAll('#tl-lbl-rows .tl-lbl-inp');
+  const labels=Array.prototype.map.call(inps,i=>i.value.trim()||'·');
+  const d=tlData();const cw=weekKey(new Date());d.weeks[cw].labels=labels;
+  sv('tierlists',d);closeModal();renderTier();
+}
+function tlShowArchive(wkKey){
+  const d=tlData();const wk=d.weeks[wkKey];if(!wk)return;
+  const theme=themeById(wk.themeId);const labels=wk.labels||TL_DEFAULT_LABELS;
+  function col(who){
+    const pl=wk.place[who]||{};
+    let h=`<div class="tl-arch-col"><div class="tl-arch-who ${who}">${whoName(who)}</div>`;
+    labels.forEach((lbl,ti)=>{
+      const items=theme.items.map((n,i)=>({n,i})).filter(o=>pl['t'+o.i]===ti);
+      h+=`<div class="tl-tier tlc${ti%5}" style="min-height:auto"><div class="tl-tier-lbl">${esc(lbl)}</div><div class="tl-tier-items">${items.map(o=>'<span class="tl-chip">'+esc(o.n)+'</span>').join('')}</div></div>`;
+    });
+    return h+'</div>';
+  }
+  openModal(`<button class="modal-close" onclick="closeModal()">×</button>
+    <h3>${theme.emoji} ${esc(theme.title)}</h3><div class="m-sub">архив · ${tlWeekLabel(wkKey)}</div>
+    <div class="tl-arch-wrap">${col('d')}${col('o')}</div>`);
+}
+
 /* ===== PET RENDER ===== */
 const PET_STAGES=[
   {min:1,name:'Зародыш'},{min:3,name:'Малыш'},{min:6,name:'Подросток'},
@@ -1993,11 +2272,11 @@ function renderPet(){
     </div>
     <div class="pet-traits-head">Черты и улучшения</div>
     <div class="pet-traits">${petTraitsList(lvl)}</div>
-    <div class="pet-xp-guide">Опыт: зарядка/таблетка +${XP.day}, оба за день +${XP.both}, вопрос +${XP.question}, фото +${XP.photo}, трек +${XP.track}, письмо +${XP.letter}, ачивка +${XP.ach}</div>`;
+    <div class="pet-xp-guide">Опыт: зарядка/таблетка +${XP.day}, оба за день +${XP.both}, вопрос +${XP.question}, фото +${XP.photo}, трек +${XP.track}, письмо +${XP.letter}, ачивка +${XP.ach}, тирлист +${XP.tier}</div>`;
 }
 
 /* ===== BACKUP ===== */
-const BK_KEYS=['ach','customAchs','together_since','events','letters','photos','tracks','questions','pet'];
+const BK_KEYS=['ach','customAchs','together_since','events','letters','photos','tracks','questions','pet','tierlists'];
 function exportBackup(){
   const dump={_app:'vmeste',_ts:Date.now(),data:{}};
   // выгружаем всё из MEM (включая ключи дней c_*)
@@ -2422,5 +2701,56 @@ function confetti(x,y){
   try{pickWho(localStorage.getItem('me')||'d');}catch(e){}
 })();
 </script>
+
+<!-- ===== TIER LIST STYLES ===== -->
+<style>
+.tl-card{background:rgba(8,12,22,.6);border:1px solid rgba(0,240,255,.25);border-radius:14px;padding:1rem;margin-bottom:1rem}
+.tl-week{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#00f0ff;opacity:.85;margin-bottom:.4rem}
+.tl-theme{display:flex;align-items:center;gap:.6rem;font-family:'Tektur',sans-serif;font-size:1.5rem;color:#eafdff}
+.tl-theme .em{font-size:1.7rem}
+.tl-prog{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#9fb3c8;margin-top:.5rem}
+.tl-btn-row{display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
+.tl-mini{padding:.4rem .7rem;font-size:.75rem;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.25);border-radius:8px;color:#cfe9ff;cursor:pointer;font-family:'Jura',sans-serif}
+.tl-mini:hover{border-color:#00f0ff}
+.tl-viewtog{display:flex;gap:.5rem;margin:.4rem 0 .8rem}
+.tl-viewtog button{flex:1;padding:.55rem;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.22);border-radius:10px;color:#cfe9ff;font-family:'Jura',sans-serif;font-size:.95rem;cursor:pointer}
+.tl-viewtog button.on{background:rgba(0,240,255,.18);border-color:#00f0ff;color:#fff;box-shadow:0 0 12px rgba(0,240,255,.4)}
+.tl-hint{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#ffd24a;margin:.2rem 0 .6rem;min-height:1em}
+.tl-tier{display:flex;align-items:stretch;gap:.5rem;margin-bottom:.4rem;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02);border:1px solid rgba(0,240,255,.12);min-height:54px}
+.tl-tier-lbl{flex:0 0 56px;display:flex;align-items:center;justify-content:center;font-family:'Tektur',sans-serif;font-weight:700;font-size:1.05rem;color:#06070d;text-align:center;padding:.3rem;word-break:break-word;line-height:1.1}
+.tl-tier-items{flex:1;display:flex;flex-wrap:wrap;gap:.35rem;align-content:flex-start;padding:.45rem}
+.tlc0 .tl-tier-lbl{background:#ff3b6b}
+.tlc1 .tl-tier-lbl{background:#ff8a3d}
+.tlc2 .tl-tier-lbl{background:#ffd24a}
+.tlc3 .tl-tier-lbl{background:#05ffa1}
+.tlc4 .tl-tier-lbl{background:#00f0ff}
+.tl-armed .tl-tier{cursor:pointer}
+.tl-armed .tl-tier:hover{box-shadow:inset 0 0 0 2px #00f0ff}
+.tl-chip{display:inline-block;padding:.32rem .55rem;background:rgba(10,18,30,.92);border:1px solid rgba(0,240,255,.3);border-radius:8px;font-family:'Jura',sans-serif;font-size:.82rem;color:#eafdff;cursor:pointer;user-select:none;-webkit-user-select:none}
+.tl-chip.sel{border-color:#ffd24a;box-shadow:0 0 10px rgba(255,210,74,.6);background:rgba(255,210,74,.12);color:#fff}
+.tl-pool{margin-top:.6rem;border:1px dashed rgba(0,240,255,.35);border-radius:10px;padding:.55rem;cursor:pointer}
+.tl-pool-head{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#9fb3c8;margin-bottom:.45rem}
+.tl-empty{color:#05ffa1;font-family:'Jura',sans-serif;font-size:.85rem}
+.tl-lockbox{padding:2rem 1rem;text-align:center;color:#9fb3c8;font-family:'Jura',sans-serif;border:1px dashed rgba(0,240,255,.25);border-radius:12px;margin-bottom:1rem}
+.tl-vote-head{font-family:'Tektur',sans-serif;font-size:1.1rem;color:#ff2a6d;margin:1.4rem 0 .3rem;text-transform:uppercase;letter-spacing:.05em}
+.tl-vote-sub{font-family:'Jura',sans-serif;font-size:.82rem;color:#9fb3c8;margin-bottom:.7rem;line-height:1.4}
+.tl-vote-item{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;padding:.6rem .7rem;margin-bottom:.4rem;background:rgba(8,12,22,.6);border:1px solid rgba(0,240,255,.2);border-radius:10px;color:#eafdff;font-family:'Jura',sans-serif;font-size:.95rem;cursor:pointer}
+.tl-vote-item.on{border-color:#05ffa1;box-shadow:0 0 12px rgba(5,255,161,.3);background:rgba(5,255,161,.08)}
+.tl-vote-check{flex:0 0 18px;height:18px;border:1px solid #05ffa1;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#05ffa1;font-size:.8rem}
+.tl-vote-emoji{font-size:1.2rem}
+.tl-vote-title{flex:1}
+.tl-vote-flags{display:flex;gap:.3rem}
+.tl-vote-flags i{font-style:normal;font-size:.6rem;padding:.14rem .4rem;border-radius:6px;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.tl-vote-flags i.d{background:rgba(255,42,109,.2);color:#ff6b97}
+.tl-vote-flags i.o{background:rgba(5,255,161,.2);color:#05ffa1}
+.tl-arch-head{font-family:'Tektur',sans-serif;color:#00f0ff;margin:1.4rem 0 .5rem;text-transform:uppercase;letter-spacing:.1em;font-size:.9rem}
+.tl-arch-item{display:block;width:100%;text-align:left;padding:.55rem .7rem;margin-bottom:.35rem;background:rgba(8,12,22,.5);border:1px solid rgba(0,240,255,.15);border-radius:8px;color:#cfe9ff;font-family:'Jura',sans-serif;cursor:pointer}
+.tl-arch-item:hover{border-color:#00f0ff}
+.tl-arch-wrap{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.8rem}
+.tl-arch-col{flex:1;min-width:150px}
+.tl-arch-who{font-family:'Tektur',sans-serif;margin-bottom:.5rem;text-align:center;font-size:1.05rem}
+.tl-arch-who.d{color:#ff6b97}
+.tl-arch-who.o{color:#05ffa1}
+</style>
 </body>
 </html>
