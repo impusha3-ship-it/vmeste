@@ -1874,9 +1874,7 @@ function renderQuestion(){
     const name=whoName(who);
     const val=td[who]||'';
     if(!val) return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-empty">ещё не ответил(а)</div></div>`;
-    // скрываем чужой ответ пока сам не ответил
-    const hide = who!==ME && !myAns;
-    return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-text${hide?' q-ans-hidden':''}">${hide?'ответ скрыт — сначала ответь сам(а)':esc(val)}</div></div>`;
+    return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-text">${esc(val)}</div></div>`;
   }
   let html=`<div class="q-card">
     <div class="q-date">${now.getDate()} ${MRG[now.getMonth()]} · вопрос дня</div>
@@ -1885,7 +1883,7 @@ function renderQuestion(){
     <div class="q-form">
       <textarea id="q-input" placeholder="Твой ответ (${whoName(ME)})...">${esc(myAns)}</textarea>
       <div class="q-who-row"><button class="btn-primary" style="flex:1" onclick="saveAnswer()">${myAns?'Обновить ответ':'Ответить как '+whoName(ME)}</button></div>
-      <div class="q-hint">${bothExist?'✓ Оба ответили — ответы открыты':'Ответы откроются, когда ответите оба'}</div>
+      <div class="q-hint">${bothExist?'✓ Оба ответили':'Ответы видны сразу — можно посмотреть и ответить когда удобно'}</div>
     </div>
   </div>`;
   // история прошлых дней (где есть хоть один ответ), новые сверху
@@ -2031,7 +2029,6 @@ function renderTier(){
   const otherPlace=wk.place[other]||{};
   const myDone=Object.keys(myPlace).length;
   const myComplete=myDone>=theme.items.length;
-  if(tlView==='other'&&!myComplete)tlView='me';
   const showPlace=tlView==='me'?myPlace:otherPlace;
   const editable=tlView==='me';
 
@@ -2047,17 +2044,18 @@ function renderTier(){
 
   html+=`<div class="tl-viewtog">
     <button class="${tlView==='me'?'on':''}" onclick="tlSetView('me')">Я · ${whoName(ME)}</button>
-    <button class="${tlView==='other'?'on':''}" onclick="tlSetView('other')">${whoName(other)}${myComplete?'':' 🔒'}</button>
+    <button class="${tlView==='other'?'on':''}" onclick="tlSetView('other')">${whoName(other)}</button>
   </div>`;
 
-  if(tlView==='other'&&!myComplete){
-    html+=`<div class="tl-lockbox">Раскладка ${whoName(other)} откроется, когда ты разложишь все элементы 🔒</div>`;
-  } else {
+  {
     if(editable&&tlSel!=null){
       const sn=theme.items[parseInt(tlSel.slice(1),10)];
       html+=`<div class="tl-hint">выбери тир для «${esc(sn)}» (или тапни «не распределено», чтобы убрать)</div>`;
     } else if(editable){
       html+=`<div class="tl-hint">тапни элемент, затем тир</div>`;
+    } else {
+      const onlyEmpty=Object.keys(showPlace).length===0;
+      html+=`<div class="tl-hint">${onlyEmpty?whoName(other)+' ещё не раскладывал(а)':'раскладка '+whoName(other)+' · только просмотр'}</div>`;
     }
     const armed=editable&&tlSel!=null?' tl-armed':'';
     html+=`<div class="tl-tiers${armed}">`;
@@ -2114,18 +2112,7 @@ function tlChip(name,idx,editable){
   const cl=editable?` onclick="event.stopPropagation();tlSelect('t${idx}')"`:'';
   return `<span class="tl-chip${sel}"${cl}>${esc(name)}</span>`;
 }
-function tlSetView(v){
-  if(v==='other'){
-    const d=tlData();const cw=weekKey(new Date());const wk=d.weeks[cw];if(!wk)return;
-    const theme=themeById(wk.themeId);const my=wk.place[ME]||{};
-    if(Object.keys(my).length<theme.items.length){
-      const other=ME==='d'?'o':'d';
-      alert('Сначала разложи свой тирлист полностью — потом откроется раскладка '+whoName(other));
-      return;
-    }
-  }
-  tlView=v;tlSel=null;renderTier();
-}
+function tlSetView(v){tlView=v;tlSel=null;renderTier();}
 function tlSelect(id){tlSel=(tlSel===id)?null:id;renderTier();}
 function tlAssign(ti){
   if(tlSel==null)return;
