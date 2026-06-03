@@ -1017,6 +1017,227 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 </div>
 
 <script>
+/* ============================================================
+   АМНЯМ — cyberpunk pet, parametric evolution generator (35 стадий)
+   buildSVG(i) -> standalone SVG string for stage i (1..35)
+   ============================================================ */
+(function () {
+  "use strict";
+  var C = { cyan:"#22e8ff", core:"#cdfaff", deep:"#0a5a7a", mag:"#ff5fe0", grn:"#5dff9e", yel:"#ffe45c", pink:"#ff8fd6", ink:"#08121c" };
+  var CX = 320, SCY = 360;
+  function cfg(i) {
+    var t = (i - 1) / 34;
+    return {
+      i:i, t:t, scale:0.82 + t*0.40, glow:3.0 + t*4.2,
+      ears:i>=3, cheeks:i>=4, paws:i>=5, halo:i>=6, crystalEyes:i>=7, whiskers:i>=8,
+      glasses:i>=9, scanner:i>=10, belly:i>=11, coffee:i>=12, circuits:i>=13, magenta:i>=14,
+      protea:i>=15, tail:i>=16, visor:i>=17, plating:i>=18, knife:i>=19, doubleHalo:i>=20,
+      green:i>=21, yellow:i>=22, core_:i>=24, toy:i>=25, wings:i>=26, particles:i>=27,
+      crownForm:i>=29, crown:i>=30, spectrum:i>=31
+    };
+  }
+  var TIERS = [[1,2,"Зерно"],[3,6,"Малыш"],[7,11,"Юный"],[12,17,"Кибер-форма"],[18,24,"Усиленный"],[25,30,"Продвинутый"],[31,35,"Легенда"]];
+  function tierName(i){ for (var k=0;k<TIERS.length;k++){ if (i>=TIERS[k][0] && i<=TIERS[k][1]) return TIERS[k][2]; } return "Амням"; }
+  function L(d, color, w, extra){ return '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round"'+(extra||'')+'/>'; }
+  function buildSVG(i) {
+    var c = cfg(i), id = "s" + i, FILL = "", LINE = "", ACC = "";
+    var bx = CX, by = 318, rx = 134, ry = 132, sw = 6.5;
+    var hasMag = c.magenta, hasGrn = c.green, hasYel = c.yellow;
+    if (c.wings) {
+      var wy = 300;
+      ACC += L("M"+(bx-110)+" "+wy+" C "+(bx-220)+" "+(wy-70)+", "+(bx-235)+" "+(wy+40)+", "+(bx-150)+" "+(wy+70), hasMag?C.mag:C.cyan, 4, ' opacity="0.85"');
+      ACC += L("M"+(bx+110)+" "+wy+" C "+(bx+220)+" "+(wy-70)+", "+(bx+235)+" "+(wy+40)+", "+(bx+150)+" "+(wy+70), hasMag?C.mag:C.cyan, 4, ' opacity="0.85"');
+      ACC += L("M"+(bx-130)+" "+(wy-10)+" L "+(bx-185)+" "+(wy-30), hasMag?C.mag:C.cyan, 2.5, ' opacity="0.6"');
+      ACC += L("M"+(bx+130)+" "+(wy-10)+" L "+(bx+185)+" "+(wy-30), hasMag?C.mag:C.cyan, 2.5, ' opacity="0.6"');
+    }
+    if (c.particles) {
+      var pts = [[150,180],[500,160],[120,330],[510,360],[180,90],[470,90],[95,250],[540,260]];
+      for (var p=0;p<pts.length;p++){
+        var col = (p%3===0 && hasYel)?C.yel : (p%3===1 && hasGrn)?C.grn : C.cyan;
+        var sp = 4 + (p%3)*2;
+        ACC += '<path d="M'+pts[p][0]+' '+(pts[p][1]-sp)+' L'+(pts[p][0]+sp)+' '+pts[p][1]+' L'+pts[p][0]+' '+(pts[p][1]+sp)+' L'+(pts[p][0]-sp)+' '+pts[p][1]+' Z" fill="'+col+'" opacity="0.9"/>';
+      }
+    }
+    if (c.halo) {
+      var hy = 500;
+      LINE += '<ellipse cx="'+bx+'" cy="'+hy+'" rx="150" ry="34" fill="none" stroke="'+C.cyan+'" stroke-width="5"/>';
+      LINE += '<ellipse cx="'+bx+'" cy="'+hy+'" rx="150" ry="34" fill="none" stroke="'+C.core+'" stroke-width="1.6" opacity="0.8"/>';
+      if (c.doubleHalo) ACC += '<ellipse cx="'+bx+'" cy="'+(hy+12)+'" rx="186" ry="44" fill="none" stroke="'+(hasMag?C.mag:C.cyan)+'" stroke-width="3.5" opacity="0.85"/>';
+      if (c.spectrum) ACC += '<ellipse cx="'+bx+'" cy="'+(hy-14)+'" rx="118" ry="26" fill="none" stroke="url(#spec'+id+')" stroke-width="3"/>';
+    }
+    if (c.tail) {
+      LINE += L("M"+(bx+90)+" "+(by+95)+" C "+(bx+185)+" "+(by+120)+", "+(bx+205)+" "+(by+30)+", "+(bx+168)+" "+(by-10), C.cyan, 5);
+      ACC  += '<circle cx="'+(bx+168)+'" cy="'+(by-10)+'" r="9" fill="'+(hasGrn?C.grn:C.cyan)+'"/>';
+    }
+    if (c.ears) {
+      LINE += L("M"+(bx-86)+" "+(by-86)+" Q "+(bx-128)+" "+(by-186)+", "+(bx-58)+" "+(by-150)+" Q "+(bx-46)+" "+(by-116)+", "+(bx-46)+" "+(by-96), C.cyan, sw);
+      LINE += L("M"+(bx+86)+" "+(by-86)+" Q "+(bx+128)+" "+(by-186)+", "+(bx+58)+" "+(by-150)+" Q "+(bx+46)+" "+(by-116)+", "+(bx+46)+" "+(by-96), C.cyan, sw);
+      var ie = hasMag ? C.mag : C.cyan;
+      LINE += L("M"+(bx-80)+" "+(by-100)+" Q "+(bx-96)+" "+(by-150)+", "+(bx-66)+" "+(by-134), ie, 3, ' opacity="0.85"');
+      LINE += L("M"+(bx+80)+" "+(by-100)+" Q "+(bx+96)+" "+(by-150)+", "+(bx+66)+" "+(by-134), ie, 3, ' opacity="0.85"');
+    }
+    FILL += '<ellipse cx="'+bx+'" cy="'+by+'" rx="'+rx+'" ry="'+ry+'" fill="url(#body'+id+')"/>';
+    LINE += '<ellipse cx="'+bx+'" cy="'+by+'" rx="'+rx+'" ry="'+ry+'" fill="none" stroke="'+C.cyan+'" stroke-width="'+sw+'"/>';
+    LINE += '<ellipse cx="'+bx+'" cy="'+by+'" rx="'+rx+'" ry="'+ry+'" fill="none" stroke="'+C.core+'" stroke-width="1.4" opacity="0.7"/>';
+    if (c.spectrum) ACC += '<ellipse cx="'+(bx+4)+'" cy="'+(by+3)+'" rx="'+rx+'" ry="'+ry+'" fill="none" stroke="'+C.mag+'" stroke-width="2.2" opacity="0.55"/>';
+    if (c.belly) LINE += '<path d="M'+(bx-58)+' '+(by+26)+' Q '+bx+' '+(by+8)+', '+(bx+58)+' '+(by+26)+' Q '+(bx+78)+' '+(by+86)+', '+bx+' '+(by+100)+' Q '+(bx-78)+' '+(by+86)+', '+(bx-58)+' '+(by+26)+' Z" fill="none" stroke="'+C.cyan+'" stroke-width="2.6" opacity="0.7"/>';
+    if (c.circuits) {
+      var cc = C.cyan;
+      LINE += L("M"+(bx-100)+" "+(by-20)+" H "+(bx-66)+" V "+(by+6), cc, 2.4, ' opacity="0.65"');
+      LINE += L("M"+(bx+100)+" "+(by+30)+" H "+(bx+70)+" V "+(by+58), cc, 2.4, ' opacity="0.65"');
+      LINE += L("M"+(bx-96)+" "+(by+60)+" h 30 v -22", cc, 2.4, ' opacity="0.65"');
+      var nodes = [[bx-66,by+6],[bx+70,by+58],[bx-66,by+38]];
+      for (var n=0;n<nodes.length;n++) ACC += '<circle cx="'+nodes[n][0]+'" cy="'+nodes[n][1]+'" r="4.5" fill="'+(hasGrn?C.grn:C.cyan)+'"/>';
+    }
+    if (c.core_) {
+      var rc = hasGrn ? C.grn : C.cyan;
+      FILL += '<circle cx="'+bx+'" cy="'+(by+52)+'" r="20" fill="'+rc+'" opacity="0.18"/>';
+      LINE += '<circle cx="'+bx+'" cy="'+(by+52)+'" r="20" fill="none" stroke="'+rc+'" stroke-width="3"/>';
+      ACC  += '<circle cx="'+bx+'" cy="'+(by+52)+'" r="7" fill="'+C.core+'"/>';
+    }
+    if (c.plating) {
+      LINE += L("M"+(bx-120)+" "+(by-30)+" A 130 130 0 0 1 "+(bx-70)+" "+(by-104), C.cyan, 4, ' opacity="0.8"');
+      LINE += L("M"+(bx+120)+" "+(by-30)+" A 130 130 0 0 0 "+(bx+70)+" "+(by-104), C.cyan, 4, ' opacity="0.8"');
+    }
+    if (c.cheeks) {
+      var ch = hasMag ? C.mag : C.pink;
+      FILL += '<ellipse cx="'+(bx-78)+'" cy="'+(by+10)+'" rx="22" ry="14" fill="'+ch+'" opacity="0.45"/>';
+      FILL += '<ellipse cx="'+(bx+78)+'" cy="'+(by+10)+'" rx="22" ry="14" fill="'+ch+'" opacity="0.45"/>';
+    }
+    var eyL = bx - 49, eyR = bx + 49, eyY = by - 28, eR = c.crystalEyes ? 43 : 39;
+    if (c.crystalEyes) {
+      FILL += '<path d="M'+eyL+' '+(eyY-eR)+' L'+(eyL+eR*0.8)+' '+eyY+' L'+eyL+' '+(eyY+eR)+' L'+(eyL-eR*0.8)+' '+eyY+' Z" fill="'+C.ink+'" opacity="0.55"/>';
+      FILL += '<path d="M'+eyR+' '+(eyY-eR)+' L'+(eyR+eR*0.8)+' '+eyY+' L'+eyR+' '+(eyY+eR)+' L'+(eyR-eR*0.8)+' '+eyY+' Z" fill="'+C.ink+'" opacity="0.55"/>';
+      LINE += '<path d="M'+eyL+' '+(eyY-eR)+' L'+(eyL+eR*0.8)+' '+eyY+' L'+eyL+' '+(eyY+eR)+' L'+(eyL-eR*0.8)+' '+eyY+' Z" fill="none" stroke="'+C.cyan+'" stroke-width="3.4"/>';
+      LINE += '<path d="M'+eyR+' '+(eyY-eR)+' L'+(eyR+eR*0.8)+' '+eyY+' L'+eyR+' '+(eyY+eR)+' L'+(eyR-eR*0.8)+' '+eyY+' Z" fill="none" stroke="'+C.cyan+'" stroke-width="3.4"/>';
+    } else {
+      FILL += '<circle cx="'+eyL+'" cy="'+eyY+'" r="'+eR+'" fill="'+C.ink+'" opacity="0.5"/>';
+      FILL += '<circle cx="'+eyR+'" cy="'+eyY+'" r="'+eR+'" fill="'+C.ink+'" opacity="0.5"/>';
+      LINE += '<circle cx="'+eyL+'" cy="'+eyY+'" r="'+eR+'" fill="none" stroke="'+C.cyan+'" stroke-width="3.4"/>';
+      LINE += '<circle cx="'+eyR+'" cy="'+eyY+'" r="'+eR+'" fill="none" stroke="'+C.cyan+'" stroke-width="3.4"/>';
+    }
+    function pupil(ex){
+      return '<circle cx="'+ex+'" cy="'+eyY+'" r="'+(eR*0.5)+'" fill="'+C.cyan+'"/>'
+        + '<circle cx="'+ex+'" cy="'+eyY+'" r="'+(eR*0.32)+'" fill="'+C.core+'"/>'
+        + '<circle cx="'+(ex-eR*0.22)+'" cy="'+(eyY-eR*0.26)+'" r="'+(eR*0.13)+'" fill="#ffffff"/>';
+    }
+    LINE += pupil(eyL) + pupil(eyR);
+    if (c.visor) {
+      FILL += '<path d="M'+(bx-98)+' '+(eyY-30)+' Q '+bx+' '+(eyY-46)+', '+(bx+98)+' '+(eyY-30)+' L '+(bx+92)+' '+(eyY+22)+' Q '+bx+' '+(eyY+34)+', '+(bx-92)+' '+(eyY+22)+' Z" fill="'+C.cyan+'" opacity="0.12"/>';
+      LINE += L("M"+(bx-98)+" "+(eyY-30)+" Q "+bx+" "+(eyY-46)+", "+(bx+98)+" "+(eyY-30), C.cyan, 3.4);
+      ACC  += L("M"+(bx-92)+" "+(eyY-6)+" H "+(bx+92), hasMag?C.mag:C.core, 2.2, ' opacity="0.9"');
+    }
+    if (c.glasses) {
+      var gw = 3.2;
+      LINE += '<circle cx="'+eyL+'" cy="'+eyY+'" r="'+(eR+10)+'" fill="none" stroke="'+C.core+'" stroke-width="'+gw+'"/>';
+      LINE += '<circle cx="'+eyR+'" cy="'+eyY+'" r="'+(eR+10)+'" fill="none" stroke="'+C.core+'" stroke-width="'+gw+'"/>';
+      LINE += L("M"+(eyL+eR+10)+" "+eyY+" Q "+bx+" "+(eyY-8)+", "+(eyR-eR-10)+" "+eyY, C.core, gw);
+      LINE += L("M"+(eyL-eR-10)+" "+eyY+" L "+(bx-118)+" "+(eyY-6), C.core, gw);
+      LINE += L("M"+(eyR+eR+10)+" "+eyY+" L "+(bx+118)+" "+(eyY-6), C.core, gw);
+    }
+    var my = by + 34;
+    LINE += L("M"+(bx-34)+" "+my+" Q "+bx+" "+(my+26)+", "+(bx+34)+" "+my, C.cyan, 4.4);
+    if (i >= 7) LINE += '<circle cx="'+bx+'" cy="'+(my+14)+'" r="5" fill="'+(hasMag?C.mag:C.pink)+'"/>';
+    if (c.whiskers) {
+      LINE += L("M"+(bx-100)+" "+(by+4)+" q -34 -4 -56 8", C.cyan, 2.6, ' opacity="0.8"');
+      LINE += L("M"+(bx-100)+" "+(by+18)+" q -34 2 -54 16", C.cyan, 2.6, ' opacity="0.8"');
+      LINE += L("M"+(bx+100)+" "+(by+4)+" q 34 -4 56 8", C.cyan, 2.6, ' opacity="0.8"');
+      LINE += L("M"+(bx+100)+" "+(by+18)+" q 34 2 54 16", C.cyan, 2.6, ' opacity="0.8"');
+      ACC  += '<circle cx="'+(bx-158)+'" cy="'+(by+12)+'" r="4" fill="'+(hasYel?C.yel:C.cyan)+'"/>';
+      ACC  += '<circle cx="'+(bx+158)+'" cy="'+(by+12)+'" r="4" fill="'+(hasYel?C.yel:C.cyan)+'"/>';
+    }
+    if (c.scanner) {
+      LINE += L("M"+bx+" "+(by-ry+6)+" V "+(by-ry-46), C.cyan, 3.4);
+      ACC  += '<circle cx="'+bx+'" cy="'+(by-ry-52)+'" r="8" fill="'+(hasYel?C.yel:C.cyan)+'"/>';
+      ACC  += '<circle cx="'+bx+'" cy="'+(by-ry-52)+'" r="13" fill="none" stroke="'+(hasYel?C.yel:C.cyan)+'" stroke-width="2" opacity="0.6"/>';
+    }
+    if (c.paws) {
+      var py = by + 102;
+      FILL += '<ellipse cx="'+(bx-58)+'" cy="'+py+'" rx="30" ry="22" fill="url(#body'+id+')"/>';
+      FILL += '<ellipse cx="'+(bx+58)+'" cy="'+py+'" rx="30" ry="22" fill="url(#body'+id+')"/>';
+      LINE += '<ellipse cx="'+(bx-58)+'" cy="'+py+'" rx="30" ry="22" fill="none" stroke="'+C.cyan+'" stroke-width="5"/>';
+      LINE += '<ellipse cx="'+(bx+58)+'" cy="'+py+'" rx="30" ry="22" fill="none" stroke="'+C.cyan+'" stroke-width="5"/>';
+    }
+    if (c.coffee) {
+      var kx = bx - 120, ky = by + 96;
+      LINE += '<path d="M'+(kx-22)+' '+(ky-18)+' h44 l-5 40 q-17 8 -34 0 Z" fill="none" stroke="'+C.cyan+'" stroke-width="4"/>';
+      LINE += '<path d="M'+(kx+22)+' '+(ky-10)+' q18 2 16 18 q-2 12 -16 12" fill="none" stroke="'+C.cyan+'" stroke-width="3.4"/>';
+      LINE += '<ellipse cx="'+kx+'" cy="'+(ky-18)+'" rx="22" ry="6" fill="none" stroke="'+C.core+'" stroke-width="2.6"/>';
+      ACC  += L("M"+(kx-8)+" "+(ky-30)+" q-6 -10 0 -20", hasYel?C.yel:C.core, 2.4, ' opacity="0.8"');
+      ACC  += L("M"+(kx+8)+" "+(ky-30)+" q6 -10 0 -20", hasYel?C.yel:C.core, 2.4, ' opacity="0.8"');
+    }
+    if (c.protea) {
+      var fx = bx + 96, fy = by - 150, pc = C.pink, pg = hasGrn ? C.grn : C.cyan;
+      for (var a=0;a<8;a++){
+        var ang = (a/8)*Math.PI*2;
+        var ox = fx + Math.cos(ang)*4, oy = fy + Math.sin(ang)*4;
+        var tx = fx + Math.cos(ang)*26, ty = fy + Math.sin(ang)*26;
+        ACC += L("M"+ox.toFixed(1)+" "+oy.toFixed(1)+" L "+tx.toFixed(1)+" "+ty.toFixed(1), pc, 4, ' opacity="0.9"');
+      }
+      ACC += '<circle cx="'+fx+'" cy="'+fy+'" r="11" fill="none" stroke="'+pc+'" stroke-width="3.4"/>';
+      ACC += '<circle cx="'+fx+'" cy="'+fy+'" r="4.5" fill="'+C.core+'"/>';
+      ACC += L("M"+fx+" "+(fy+24)+" q -8 22 -28 30", pg, 3, ' opacity="0.85"');
+    }
+    if (c.knife) {
+      var nx = bx + 118, ny = by + 96;
+      LINE += '<path d="M'+nx+' '+(ny-70)+' L '+(nx+9)+' '+(ny-12)+' L '+(nx-9)+' '+(ny-12)+' Z" fill="none" stroke="'+C.core+'" stroke-width="3.6"/>';
+      LINE += L("M"+nx+" "+(ny-64)+" V "+(ny-16), C.cyan, 2, ' opacity="0.7"');
+      LINE += L("M"+(nx-16)+" "+(ny-12)+" H "+(nx+16), C.cyan, 4);
+      LINE += L("M"+nx+" "+(ny-12)+" V "+(ny+18), C.cyan, 6);
+      ACC += '<circle cx="'+nx+'" cy="'+(ny+18)+'" r="5" fill="'+(hasMag?C.mag:C.cyan)+'"/>';
+      ACC += L("M"+(nx+5)+" "+(ny-60)+" L "+(nx+8)+" "+(ny-16), hasMag?C.mag:C.core, 2, ' opacity="0.8"');
+    }
+    if (c.toy) {
+      var tx2 = bx - 158, ty2 = by + 168, ts = 0.40;
+      var g = '<g transform="translate('+tx2+','+ty2+') scale('+ts+')">';
+      g += '<ellipse cx="0" cy="0" rx="120" ry="116" fill="'+C.cyan+'" opacity="0.12"/>';
+      g += '<ellipse cx="0" cy="0" rx="120" ry="116" fill="none" stroke="'+C.cyan+'" stroke-width="9"/>';
+      g += L("M-78 -78 Q -118 -178, -52 -142", C.cyan, 9);
+      g += L("M78 -78 Q 118 -178, 52 -142", C.cyan, 9);
+      g += '<circle cx="-46" cy="-20" r="26" fill="'+C.core+'"/>';
+      g += '<circle cx="46" cy="-20" r="26" fill="'+C.core+'"/>';
+      g += L("M-22 34 Q 0 58, 22 34", C.cyan, 7);
+      g += '</g>';
+      ACC += g;
+    }
+    if (c.crown || c.crownForm) {
+      var cwy = by - ry - (c.scanner ? 8 : 2);
+      var col = c.crown ? (hasYel?C.yel:C.core) : C.cyan;
+      var op = c.crown ? 1 : 0.55;
+      ACC += '<path d="M'+(bx-52)+' '+cwy+' L '+(bx-52)+' '+(cwy-34)+' L '+(bx-26)+' '+(cwy-8)+' L '+bx+' '+(cwy-42)+' L '+(bx+26)+' '+(cwy-8)+' L '+(bx+52)+' '+(cwy-34)+' L '+(bx+52)+' '+cwy+' Z" fill="none" stroke="'+col+'" stroke-width="4" opacity="'+op+'"/>';
+      if (c.crown) {
+        ACC += '<circle cx="'+(bx-52)+'" cy="'+(cwy-34)+'" r="5" fill="'+C.mag+'"/>';
+        ACC += '<circle cx="'+bx+'" cy="'+(cwy-42)+'" r="6" fill="'+(hasGrn?C.grn:C.cyan)+'"/>';
+        ACC += '<circle cx="'+(bx+52)+'" cy="'+(cwy-34)+'" r="5" fill="'+C.mag+'"/>';
+      }
+    }
+    var s = c.scale.toFixed(3), W = 640, H = 680;
+    var defs =
+      '<radialGradient id="body'+id+'" cx="42%" cy="34%" r="72%">'
+        + '<stop offset="0%" stop-color="'+C.core+'" stop-opacity="0.30"/>'
+        + '<stop offset="55%" stop-color="'+C.cyan+'" stop-opacity="0.16"/>'
+        + '<stop offset="100%" stop-color="'+C.deep+'" stop-opacity="0.10"/>'
+      + '</radialGradient>'
+      + '<linearGradient id="spec'+id+'" x1="0" y1="0" x2="1" y2="0">'
+        + '<stop offset="0%" stop-color="'+C.cyan+'"/><stop offset="50%" stop-color="'+C.mag+'"/><stop offset="100%" stop-color="'+C.grn+'"/>'
+      + '</linearGradient>'
+      + '<filter id="glow'+id+'" x="-40%" y="-40%" width="180%" height="180%">'
+        + '<feGaussianBlur stdDeviation="'+c.glow.toFixed(1)+'" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+      + '</filter>'
+      + '<filter id="glowA'+id+'" x="-60%" y="-60%" width="220%" height="220%">'
+        + '<feGaussianBlur stdDeviation="'+(c.glow*0.8).toFixed(1)+'" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+      + '</filter>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" class="pet-svg">'
+      + '<defs>'+defs+'</defs>'
+      + '<g transform="translate('+CX+' '+SCY+') scale('+s+') translate('+(-CX)+' '+(-SCY)+')">'
+        + '<g>'+FILL+'</g>'
+        + '<g filter="url(#glow'+id+')">'+LINE+'</g>'
+        + '<g filter="url(#glowA'+id+')">'+ACC+'</g>'
+      + '</g></svg>';
+  }
+  window.AMNYAM = { buildSVG:buildSVG, cfg:cfg, tierName:tierName, COUNT:35 };
+})();
+
 const PWD='2031';
 const MR=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const MRG=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -1303,9 +1524,9 @@ function updateSoundIcon(){const b=document.getElementById('sound-btn');if(b)b.t
 const XP={day:10,both:10,question:15,ach:50,photo:20,track:15,letter:25,tier:30};
 function petData(){return ld('pet',{xp:0,claimed:{}});}
 // порог суммарного XP для достижения уровня n (n>=1)
-function lvlThreshold(n){let t=0;for(let i=1;i<n;i++)t+=Math.round(80*Math.pow(1.45,i-1));return t;}
+function lvlThreshold(n){let t=0;for(let i=1;i<n;i++)t+=Math.round(45*Math.pow(1.13,i-1));return t;}
 function levelFromXp(xp){let n=1;while(xp>=lvlThreshold(n+1))n++;return n;}
-const PET_MAXLVL=18;
+const PET_MAXLVL=35;
 function petGain(key,amount,silent){
   const p=petData();
   if(p.claimed[key])return; // anti-chit: одно событие — один раз
@@ -2258,63 +2479,19 @@ function tlShowArchive(wkKey){
 }
 
 /* ===== PET RENDER ===== */
-const PET_STAGES=[
-  {min:1,name:'Зародыш'},{min:3,name:'Малыш'},{min:6,name:'Подросток'},
-  {min:10,name:'Взрослый'},{min:14,name:'Кибер-форма'},{min:18,name:'Легенда'}
-];
-function petStage(lvl){let s=PET_STAGES[0];for(const st of PET_STAGES)if(lvl>=st.min)s=st;return s;}
-// палитра по уровню
-function petPalette(lvl){
-  if(lvl>=18)return{c:'#ffd24a',g:'rgba(255,210,74,.9)'};
-  if(lvl>=14)return{c:'#d4b87a',g:'rgba(212,184,122,.9)'};
-  if(lvl>=10)return{c:'#ff2a6d',g:'rgba(255,42,109,.9)'};
-  if(lvl>=6)return{c:'#05ffa1',g:'rgba(5,255,161,.9)'};
-  return{c:'#00f0ff',g:'rgba(0,240,255,.9)'};
-}
-// SVG Амняма по уровню+настроению. body растёт, черты/декор добавляются.
+function petStage(lvl){return {name:(window.AMNYAM?AMNYAM.tierName(Math.min(35,lvl)):'Амням')};}
+// SVG Амняма по уровню (35 стадий, генератор window.AMNYAM)
 function petSVG(lvl,mood){
-  const pal=petPalette(lvl);
-  const happy=mood>=0.5;
-  const grow=Math.min(1,(lvl-1)/17); // 0..1
-  const r=34+grow*14; // тело
-  const cx=80,cy=86;
-  let s=`<svg viewBox="0 0 160 170" class="pet-svg" style="--pc:${pal.c}">`;
-  // неон-ореол (C, с lvl>=4)
-  if(lvl>=4)s+=`<circle cx="${cx}" cy="${cy}" r="${r+14}" fill="none" stroke="${pal.c}" stroke-opacity="0.25" stroke-width="1.5" class="pet-halo"/>`;
-  if(lvl>=16)s+=`<circle cx="${cx}" cy="${cy}" r="${r+22}" fill="none" stroke="${pal.c}" stroke-opacity="0.15" stroke-width="1"/>`;
-  // схемы на теле (C, lvl>=12)
-  // тело
-  s+=`<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r*0.92}" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="2" filter="drop-shadow(0 0 8px ${pal.g})"/>`;
-  if(lvl>=12){s+=`<path d="M${cx-r*0.5} ${cy} h${r} M${cx} ${cy-r*0.5} v${r}" stroke="${pal.c}" stroke-opacity="0.25" stroke-width="1"/><circle cx="${cx-r*0.3}" cy="${cy+r*0.3}" r="2" fill="${pal.c}" opacity="0.5"/>`;}
-  // ушки (B, lvl>=3)
-  if(lvl>=3){s+=`<path d="M${cx-r*0.6} ${cy-r*0.75} l-6 -16 l16 8 z" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="2"/><path d="M${cx+r*0.6} ${cy-r*0.75} l6 -16 l-16 8 z" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="2"/>`;}
-  // антенна (C, lvl>=8)
-  if(lvl>=8){s+=`<line x1="${cx}" y1="${cy-r*0.95}" x2="${cx}" y2="${cy-r-16}" stroke="${pal.c}" stroke-width="2"/><circle cx="${cx}" cy="${cy-r-18}" r="3.5" fill="${pal.c}" class="pet-anten"/>`;}
-  // глаза (B) — большие у малыша, прищур-визор у кибер
-  const ey=cy-2, ex=r*0.42;
-  if(lvl>=14){ // визор (C)
-    s+=`<rect x="${cx-ex-10}" y="${ey-7}" width="${ex*2+20}" height="13" rx="6" fill="rgba(0,0,0,0.6)" stroke="${pal.c}" stroke-width="1.5"/><line x1="${cx-ex-6}" y1="${ey}" x2="${cx+ex+6}" y2="${ey}" stroke="${pal.c}" stroke-width="2" class="pet-visor"/>`;
-  } else {
-    const er=lvl>=6?5:7;
-    s+=`<circle cx="${cx-ex}" cy="${ey}" r="${er}" fill="${pal.c}" class="pet-eye"/><circle cx="${cx+ex}" cy="${ey}" r="${er}" fill="${pal.c}" class="pet-eye"/>`;
-    s+=`<circle cx="${cx-ex+1}" cy="${ey-1}" r="1.6" fill="#04121a"/><circle cx="${cx+ex+1}" cy="${ey-1}" r="1.6" fill="#04121a"/>`;
-  }
-  // рот (E настроение)
-  if(happy)s+=`<path d="M${cx-9} ${cy+r*0.45} q9 9 18 0" fill="none" stroke="${pal.c}" stroke-width="2" stroke-linecap="round"/>`;
-  else s+=`<path d="M${cx-8} ${cy+r*0.5} q8 -6 16 0" fill="none" stroke="${pal.c}" stroke-width="2" stroke-linecap="round" opacity="0.7"/>`;
-  // усики (B, lvl>=6)
-  if(lvl>=6){s+=`<path d="M${cx-r*0.5} ${cy+5} h-14 M${cx-r*0.5} ${cy+9} h-12" stroke="${pal.c}" stroke-width="1" opacity="0.6"/><path d="M${cx+r*0.5} ${cy+5} h14 M${cx+r*0.5} ${cy+9} h12" stroke="${pal.c}" stroke-width="1" opacity="0.6"/>`;}
-  // лапки (B, lvl>=4)
-  if(lvl>=4){s+=`<ellipse cx="${cx-r*0.45}" cy="${cy+r*0.85}" rx="7" ry="5" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="1.5"/><ellipse cx="${cx+r*0.45}" cy="${cy+r*0.85}" rx="7" ry="5" fill="rgba(8,16,26,0.9)" stroke="${pal.c}" stroke-width="1.5"/>`;}
-  // корона (C, lvl>=18)
-  if(lvl>=18){s+=`<path d="M${cx-16} ${cy-r-4} l4 -14 l6 8 l6 -12 l6 12 l6 -8 l4 14 z" fill="none" stroke="#ffd24a" stroke-width="2" filter="drop-shadow(0 0 6px rgba(255,210,74,.9))"/>`;}
-  s+=`</svg>`;
-  return s;
+  const i=Math.max(1,Math.min(35,lvl));
+  if(window.AMNYAM)return AMNYAM.buildSVG(i);
+  return `<svg viewBox="0 0 160 170" class="pet-svg"><circle cx="80" cy="86" r="40" fill="rgba(8,16,26,.9)" stroke="#22e8ff" stroke-width="2"/></svg>`;
 }
 function petTraitsList(lvl){
   const all=[
-    [3,'Ушки'],[4,'Лапки + неон-ореол'],[6,'Глаза-кристаллы, усики'],[8,'Антенна-сканер'],
-    [10,'Магента-форма'],[12,'Схемы на теле'],[14,'Кибер-визор'],[16,'Двойной ореол'],[18,'Корона Легенды']
+    [3,'Ушки'],[5,'Лапки'],[6,'Неон-ореол'],[7,'Глаза-кристаллы'],[8,'Усики'],
+    [10,'Антенна-сканер'],[13,'Схемы на теле'],[14,'Магента-форма'],[16,'Хвост'],[17,'Кибер-визор'],
+    [19,'Нож из Ханса'],[20,'Двойной ореол'],[24,'Реактор в груди'],[25,'Игрушка-Амням'],[26,'Крылья'],
+    [27,'Частицы'],[30,'Корона легенды'],[31,'Спектр-аура']
   ];
   return all.map(([n,t])=>`<div class="pet-trait${lvl>=n?' on':''}"><span>${lvl>=n?'✓':'lvl '+n}</span> ${t}</div>`).join('');
 }
