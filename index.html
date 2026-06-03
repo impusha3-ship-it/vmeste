@@ -1930,8 +1930,9 @@ const QUESTIONS=[
 ];
 function todayKey(){const n=new Date();return `${n.getFullYear()}-${n.getMonth()}-${n.getDate()}`;}
 function qIndexFor(dateObj){
-  // стабильный индекс по числу дней от эпохи
-  const days=Math.floor(dateObj.getTime()/86400000);
+  // стабильный индекс по ЛОКАЛЬНОЙ календарной дате (не зависит от времени суток и часового пояса),
+  // чтобы вопрос в архиве совпадал с тем, что был задан в тот день
+  const days=Math.floor(Date.UTC(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate())/86400000);
   return ((days%QUESTIONS.length)+QUESTIONS.length)%QUESTIONS.length;
 }
 function renderQuestion(){
