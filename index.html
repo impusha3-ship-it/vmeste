@@ -1943,10 +1943,15 @@ function renderQuestion(){
   const todayIdx=qIndexFor(now);
   const td=data[tkey]||{};
   const myAns=td[ME]||'';
+  const iAnswered = !!myAns;
   const bothExist = !!td.d && !!td.o;
   function ansBlock(who){
     const name=whoName(who);
     const val=td[who]||'';
+    // ответ второго скрыт, пока ты сам(а) не ответишь
+    if(who!==ME && !iAnswered){
+      return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-empty">🔒 ${val?'ответ скрыт — сначала ответь сам(а)':'ещё не ответил(а)'}</div></div>`;
+    }
     if(!val) return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-empty">ещё не ответил(а)</div></div>`;
     return `<div class="q-ans ${who}"><div class="q-ans-who">${name}</div><div class="q-ans-text">${esc(val)}</div></div>`;
   }
@@ -1957,7 +1962,7 @@ function renderQuestion(){
     <div class="q-form">
       <textarea id="q-input" placeholder="Твой ответ (${whoName(ME)})...">${esc(myAns)}</textarea>
       <div class="q-who-row"><button class="btn-primary" style="flex:1" onclick="saveAnswer()">${myAns?'Обновить ответ':'Ответить как '+whoName(ME)}</button></div>
-      <div class="q-hint">${bothExist?'✓ Оба ответили':'Ответы видны сразу — можно посмотреть и ответить когда удобно'}</div>
+      <div class="q-hint">${bothExist?'✓ Оба ответили':(iAnswered?'Ждём ответа второго':'Ответь первым — ответ второго откроется после твоего')}</div>
     </div>
   </div>`;
   // история прошлых дней (где есть хоть один ответ), новые сверху
