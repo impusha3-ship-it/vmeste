@@ -674,21 +674,84 @@ body::before{background:transparent!important;}
 .cy-trail{position:fixed;z-index:9990;pointer-events:none;width:8px;height:8px;border-radius:50%;background:#00f0ff;box-shadow:0 0 10px #00f0ff,0 0 20px rgba(0,240,255,0.6);transform:translate(-50%,-50%);will-change:transform,opacity;}
 @media(prefers-reduced-motion:reduce){#cy-rain{display:none!important}.cy-trail{display:none!important}}
 
-/* ===== PHOTOS ===== */
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
-.photo-card{position:relative;aspect-ratio:1;overflow:hidden;border:1px solid var(--border2);background:#0a1016;cursor:pointer;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));transition:border-color .25s,box-shadow .3s;}
-.photo-card img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.15) contrast(1.05);transition:transform .5s;}
-.photo-card:hover{border-color:var(--gold);box-shadow:0 0 18px -4px rgba(0,240,255,0.6);}
-.photo-card:hover img{transform:scale(1.07);}
-.photo-cap{position:absolute;left:0;right:0;bottom:0;padding:7px 9px;font-size:11px;letter-spacing:0.03em;color:var(--ink);background:linear-gradient(transparent,rgba(4,8,14,0.92));font-family:'JetBrains Mono',monospace;}
-.photo-by{color:var(--gold);}
-.photo-del{position:absolute;top:6px;right:8px;background:rgba(4,8,14,0.7);border:1px solid var(--border2);color:var(--ink3);width:24px;height:24px;line-height:1;cursor:pointer;opacity:0;transition:opacity .2s,color .2s;z-index:2;}
+/* ===== PHOTOS :: DATABASE LEAK ===== */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
+
+/* leak banner — UNAUTHORIZED ACCESS */
+.leak-bar{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:8px 12px;border:1px solid var(--rose);background:repeating-linear-gradient(45deg,rgba(255,42,109,0.07),rgba(255,42,109,0.07) 10px,rgba(255,42,109,0.02) 10px,rgba(255,42,109,0.02) 20px);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;color:var(--rose);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));}
+.leak-dot{width:8px;height:8px;border-radius:50%;background:var(--rose);box-shadow:0 0 8px var(--rose);animation:leakblink 1s steps(1) infinite;}
+.leak-status b{animation:leakblink 1s steps(1) infinite;}
+.leak-meta{margin-left:auto;color:var(--ink4);letter-spacing:0.1em;}
+@keyframes leakblink{0%,49%{opacity:1}50%,100%{opacity:0.18}}
+
+.photo-card{position:relative;aspect-ratio:3/4;overflow:hidden;border:1px solid var(--border2);background:#0a1016;cursor:pointer;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));transition:border-color .25s,box-shadow .3s,transform .3s;}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(0.55) contrast(1.18) brightness(0.82) hue-rotate(160deg);transition:transform .5s,filter .4s;}
+.photo-card:hover{border-color:var(--gold);box-shadow:0 0 22px -4px rgba(0,240,255,0.6);transform:translateY(-2px);}
+.photo-card:hover img{transform:scale(1.06);filter:saturate(1.1) contrast(1.05) brightness(1) hue-rotate(0deg);}
+
+/* CRT scanlines */
+.photo-card::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.28) 3px,rgba(0,0,0,0.28) 4px);mix-blend-mode:multiply;opacity:0.7;}
+/* flicker sheen */
+.photo-card::before{content:'';position:absolute;inset:0;z-index:4;pointer-events:none;background:linear-gradient(rgba(0,240,255,0.05),transparent 40%);opacity:0;animation:crtflick 7s steps(1) infinite;}
+@keyframes crtflick{0%,97%{opacity:0}98%{opacity:0.5}99%{opacity:0}100%{opacity:0}}
+
+/* corner reticle brackets */
+.ph-rect{position:absolute;width:16px;height:16px;z-index:5;pointer-events:none;border:1.5px solid var(--gold);opacity:0.55;transition:opacity .25s;}
+.photo-card:hover .ph-rect{opacity:1;}
+.ph-rect.tl{top:7px;left:7px;border-right:none;border-bottom:none;}
+.ph-rect.tr{top:7px;right:7px;border-left:none;border-bottom:none;}
+.ph-rect.bl{bottom:7px;left:7px;border-right:none;border-top:none;}
+.ph-rect.br{bottom:7px;right:7px;border-left:none;border-top:none;}
+
+/* classification tag */
+.ph-tag{position:absolute;top:9px;left:50%;transform:translateX(-50%);z-index:6;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:3px 8px;border:1px solid currentColor;background:rgba(4,8,14,0.82);text-shadow:0 0 6px currentColor;}
+.ph-tag.classified{color:var(--gold);}
+.ph-tag.verified{color:var(--sage);}
+.ph-tag.corrupt{color:var(--rose);animation:leakblink 0.6s steps(1) infinite;}
+
+/* dossier readout footer */
+.ph-meta{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:9px 10px 10px;background:linear-gradient(transparent,rgba(4,8,14,0.95) 55%);font-family:'JetBrains Mono',monospace;}
+.ph-id{font-size:9px;color:var(--ink4);letter-spacing:0.08em;}
+.ph-title{font-size:12px;color:var(--ink);letter-spacing:0.04em;margin:2px 0 5px;position:relative;}
+.photo-card:hover .ph-title{animation:glitchtxt 0.5s steps(2) 1;color:var(--gold);}
+@keyframes glitchtxt{0%{transform:translate(0);text-shadow:none}25%{transform:translate(-1.5px,1px);text-shadow:1.5px 0 var(--rose),-1.5px 0 var(--gold)}50%{transform:translate(1.5px,-1px);text-shadow:-1.5px 0 var(--rose),1.5px 0 var(--sage)}75%{transform:translate(-1px,0);text-shadow:1px 0 var(--gold)}100%{transform:translate(0);text-shadow:none}}
+.ph-bars{display:flex;gap:8px;font-size:8px;letter-spacing:0.06em;}
+.ph-bars .b{flex:1;}
+.ph-bars .bl{color:var(--ink4);display:block;}
+.ph-bar{height:4px;margin-top:2px;background:rgba(255,255,255,0.08);position:relative;overflow:hidden;}
+.ph-bar i{position:absolute;left:0;top:0;bottom:0;display:block;}
+.ph-bar.int i{background:var(--sage);box-shadow:0 0 6px var(--sage);}
+.ph-bar.thr i{background:var(--rose);box-shadow:0 0 6px var(--rose);}
+
+.photo-del{position:absolute;top:7px;right:9px;background:rgba(4,8,14,0.7);border:1px solid var(--border2);color:var(--ink3);width:22px;height:22px;line-height:1;cursor:pointer;opacity:0;transition:opacity .2s,color .2s;z-index:7;}
 .photo-card:hover .photo-del{opacity:1;}
 .photo-del:hover{color:var(--rose);border-color:var(--rose);}
-.lightbox-img{max-width:100%;max-height:72vh;display:block;margin:0 auto;border:1px solid var(--border2);box-shadow:0 0 30px -6px rgba(0,240,255,0.5);filter:none!important;}
+
+/* ===== DOSSIER DETAIL PANEL (lightbox) ===== */
+.dossier{font-family:'JetBrains Mono',monospace;}
+.dossier-head{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.14em;color:var(--rose);border-bottom:1px dashed var(--border2);padding-bottom:8px;margin-bottom:14px;}
+.dossier-head .leak-dot{flex:none;}
+.dossier-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:18px;}
+@media(max-width:640px){.dossier-grid{grid-template-columns:1fr;}}
+.dossier-imgwrap{position:relative;border:1px solid var(--border2);overflow:hidden;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));}
+.dossier-imgwrap::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.22) 3px,rgba(0,0,0,0.22) 4px);}
+.lightbox-img{width:100%;max-height:64vh;object-fit:cover;display:block;filter:saturate(0.7) contrast(1.1)!important;box-shadow:none;border:none;}
+.dossier-imgwrap .ph-rect{width:22px;height:22px;opacity:0.8;}
+.dossier-data .dd-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;}
+.dossier-data .dd-k{color:var(--ink4);letter-spacing:0.08em;}
+.dossier-data .dd-v{color:var(--ink);text-align:right;}
+.dd-tag{display:inline-block;padding:2px 8px;border:1px solid currentColor;font-size:10px;letter-spacing:0.14em;font-weight:700;}
+.dd-tag.classified{color:var(--gold);}.dd-tag.verified{color:var(--sage);}.dd-tag.corrupt{color:var(--rose);}
+.dd-meter{height:6px;background:rgba(255,255,255,0.08);margin-top:6px;position:relative;overflow:hidden;width:120px;}
+.dd-meter i{position:absolute;inset:0 auto 0 0;display:block;}
+.dd-meter.int i{background:var(--sage);box-shadow:0 0 8px var(--sage);}
+.dd-meter.thr i{background:var(--rose);box-shadow:0 0 8px var(--rose);}
+.dossier-foot{margin-top:14px;font-size:11px;color:var(--ink4);letter-spacing:0.06em;border-top:1px dashed var(--border2);padding-top:10px;line-height:1.7;}
+.dossier-foot .blink{color:var(--rose);animation:leakblink 1s steps(1) infinite;}
+
 /* hide cyberpunk overlays so the photo shows clean */
 body.lightbox-open .cy-scan,body.lightbox-open .cy-grid,body.lightbox-open .cy-vig{display:none!important;}
-body.lightbox-open .modal{background:#0a0f16!important;}
+body.lightbox-open .modal{background:#0a0f16!important;max-width:860px!important;}
 
 /* ===== MUSIC ===== */
 .music-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
@@ -969,6 +1032,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
       <button class="tg-add" onclick="openPhotoModal()">+ Загрузить фото</button>
     </div>
     <div class="lt-intro">Совместный архив моментов. Фото сжимаются и хранятся в общем облаке — видны на всех устройствах.</div>
+    <div class="leak-bar">
+      <span class="leak-dot"></span>
+      <span class="leak-status">// <b>UNAUTHORIZED ACCESS</b> — DATABASE LEAK DETECTED</span>
+      <span class="leak-meta" id="leak-meta">RECORDS: 0 · ENCRYPTION: BYPASSED</span>
+    </div>
     <div class="photo-grid" id="photo-grid"></div>
   </div>
 
@@ -1850,25 +1918,84 @@ function delLetter(a,b){
 }
 function fmtDate(s){const d=new Date(s+'T00:00:00');return `${d.getDate()} ${MRG[d.getMonth()]} ${d.getFullYear()}`;}
 
-/* ===== PHOTOS ===== */
+/* ===== PHOTOS :: DATABASE LEAK ===== */
+/* deterministic pseudo-random from a photo id, so every card is unique but stable */
+function leakHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function leakDossier(p){
+  const h=leakHash(p.id);
+  const r=(seed)=>{const x=Math.sin(h*9301+seed*49297)*233280;return x-Math.floor(x);};
+  // classification: weighted — mostly CLASSIFIED, some VERIFIED, few CORRUPT
+  const roll=r(1);const cls=roll<0.18?'corrupt':roll<0.5?'verified':'classified';
+  const integrity=cls==='corrupt'?Math.floor(11+r(2)*38):Math.floor(72+r(2)*27); // %
+  const threat=cls==='corrupt'?Math.floor(64+r(3)*35):Math.floor(6+r(3)*48);      // %
+  const sector=['ALPHA','BETA','GAMMA','DELTA','OMEGA','SIGMA','THETA'][Math.floor(r(4)*7)];
+  const node='0x'+(h%0xFFFFFF).toString(16).toUpperCase().padStart(6,'0');
+  const idnum='REC-'+sector+'-'+((h%9000)+1000);
+  const lat=(r(5)*180-90).toFixed(4), lon=(r(6)*360-180).toFixed(4);
+  const enc=['AES-256','RSA-2048','SHA-512','BLOWFISH','TWOFISH'][Math.floor(r(7)*5)];
+  return {cls,integrity,threat,sector,node,idnum,lat,lon,enc};
+}
+function clsLabel(c){return c==='corrupt'?'CORRUPT':c==='verified'?'VERIFIED':'CLASSIFIED';}
 function renderPhotos(){
   const list=ld('photos',[]).slice().sort((a,b)=>b.ts-a.ts);
   const grid=document.getElementById('photo-grid');
-  if(!list.length){grid.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// архив пуст — загрузите первый кадр</div>`;return;}
+  const meta=document.getElementById('leak-meta');
+  if(meta)meta.textContent=`RECORDS: ${String(list.length).padStart(3,'0')} · ENCRYPTION: BYPASSED`;
+  if(!list.length){grid.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// архив пуст — загрузите первый перехваченный кадр</div>`;return;}
   grid.innerHTML='';
   list.forEach(p=>{
+    const d=leakDossier(p);
+    const title=p.cap?esc(p.cap):'UNTITLED_FRAME';
     const c=document.createElement('div');c.className='photo-card';
-    c.innerHTML=`<img src="${p.data}" alt="" loading="lazy"><button class="photo-del" onclick="delPhoto(event,'${p.id}')">×</button>`+
-      (p.cap||p.by?`<div class="photo-cap">${p.cap?esc(p.cap):''}${p.by?` <span class="photo-by">— ${esc(p.by)}</span>`:''}</div>`:'');
-    c.querySelector('img').onclick=()=>openLightbox(p);
+    c.innerHTML=`
+      <img src="${p.data}" alt="" loading="lazy">
+      <span class="ph-rect tl"></span><span class="ph-rect tr"></span><span class="ph-rect bl"></span><span class="ph-rect br"></span>
+      <span class="ph-tag ${d.cls}">${clsLabel(d.cls)}</span>
+      <button class="photo-del" onclick="delPhoto(event,'${p.id}')">×</button>
+      <div class="ph-meta">
+        <div class="ph-id">${d.idnum} · ${new Date(p.ts).toLocaleDateString('ru-RU')}</div>
+        <div class="ph-title">${title}</div>
+        <div class="ph-bars">
+          <span class="b"><span class="bl">INTEGRITY ${d.integrity}%</span><span class="ph-bar int"><i style="width:${d.integrity}%"></i></span></span>
+          <span class="b"><span class="bl">THREAT ${d.threat}%</span><span class="ph-bar thr"><i style="width:${d.threat}%"></i></span></span>
+        </div>
+      </div>`;
+    c.onclick=(e)=>{if(e.target.classList.contains('photo-del'))return;openLightbox(p);};
     grid.appendChild(c);
   });
 }
 function openLightbox(p){
   document.body.classList.add('lightbox-open');
+  const d=leakDossier(p);
+  const title=p.cap?esc(p.cap):'UNTITLED_FRAME';
+  const date=new Date(p.ts);
+  const ts=date.toLocaleDateString('ru-RU')+' '+date.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
   openModal(`<button class="modal-close" onclick="closeModal()">×</button>
-    <img class="lightbox-img" src="${p.data}" alt="">
-    <div style="text-align:center;margin-top:1rem;font-family:'JetBrains Mono',monospace;color:var(--ink3);font-size:12px;">${p.cap?esc(p.cap)+' · ':''}${p.by?esc(p.by)+' · ':''}${new Date(p.ts).toLocaleDateString('ru-RU')}</div>`);
+   <div class="dossier">
+    <div class="dossier-head"><span class="leak-dot"></span>// DECRYPTED RECORD ${d.idnum} — ACCESS LEVEL OVERRIDDEN</div>
+    <div class="dossier-grid">
+      <div class="dossier-imgwrap">
+        <img class="lightbox-img" src="${p.data}" alt="">
+        <span class="ph-rect tl"></span><span class="ph-rect tr"></span><span class="ph-rect bl"></span><span class="ph-rect br"></span>
+      </div>
+      <div class="dossier-data">
+        <div class="dd-row"><span class="dd-k">DESIGNATION</span><span class="dd-v">${title}</span></div>
+        <div class="dd-row"><span class="dd-k">STATUS</span><span class="dd-v"><span class="dd-tag ${d.cls}">${clsLabel(d.cls)}</span></span></div>
+        <div class="dd-row"><span class="dd-k">SOURCE AGENT</span><span class="dd-v">${p.by?esc(p.by):'UNKNOWN'}</span></div>
+        <div class="dd-row"><span class="dd-k">TIMESTAMP</span><span class="dd-v">${ts}</span></div>
+        <div class="dd-row"><span class="dd-k">NODE ID</span><span class="dd-v">${d.node}</span></div>
+        <div class="dd-row"><span class="dd-k">SECTOR</span><span class="dd-v">${d.sector}</span></div>
+        <div class="dd-row"><span class="dd-k">GEO-TAG</span><span class="dd-v">${d.lat}, ${d.lon}</span></div>
+        <div class="dd-row"><span class="dd-k">CIPHER</span><span class="dd-v">${d.enc} · BROKEN</span></div>
+        <div class="dd-row"><span class="dd-k">INTEGRITY</span><span class="dd-v">${d.integrity}%<span class="dd-meter int"><i style="width:${d.integrity}%"></i></span></span></div>
+        <div class="dd-row"><span class="dd-k">THREAT LVL</span><span class="dd-v">${d.threat}%<span class="dd-meter thr"><i style="width:${d.threat}%"></i></span></span></div>
+      </div>
+    </div>
+    <div class="dossier-foot">
+      &gt; trace_origin --record ${d.idnum} ... <span class="blink">CONNECTION TERMINATED</span><br>
+      &gt; warning: data exfiltrated from secured archive. ${d.cls==='corrupt'?'partial recovery — frame corrupted during transfer.':'frame reconstructed successfully.'}
+    </div>
+   </div>`);
 }
 function openPhotoModal(){
   openModal(`<button class="modal-close" onclick="closeModal()">×</button>
