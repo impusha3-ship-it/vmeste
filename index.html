@@ -734,7 +734,6 @@ body::before{background:transparent!important;}
 .dossier-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:18px;}
 @media(max-width:640px){.dossier-grid{grid-template-columns:1fr;}}
 .dossier-imgwrap{position:relative;border:1px solid var(--border2);overflow:hidden;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));}
-.dossier-imgwrap::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.22) 3px,rgba(0,0,0,0.22) 4px);}
 .lightbox-img{width:100%;max-height:64vh;object-fit:cover;display:block;filter:saturate(0.7) contrast(1.1)!important;box-shadow:none;border:none;}
 .dossier-imgwrap .ph-rect{width:22px;height:22px;opacity:0.8;}
 .dossier-data .dd-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;}
@@ -746,6 +745,9 @@ body::before{background:transparent!important;}
 .dd-meter i{position:absolute;inset:0 auto 0 0;display:block;}
 .dd-meter.int i{background:var(--sage);box-shadow:0 0 8px var(--sage);}
 .dd-meter.thr i{background:var(--rose);box-shadow:0 0 8px var(--rose);}
+.dd-swatch{display:inline-block;width:11px;height:11px;border:1px solid rgba(255,255,255,0.4);margin-right:6px;vertical-align:-1px;box-shadow:0 0 6px currentColor;}
+.dd-rgb{display:inline-flex;gap:2px;align-items:center;margin-right:7px;vertical-align:-2px;height:8px;}
+.dd-rgb i{display:block;height:8px;min-width:2px;}
 .dossier-foot{margin-top:14px;font-size:11px;color:var(--ink4);letter-spacing:0.06em;border-top:1px dashed var(--border2);padding-top:10px;line-height:1.7;}
 .dossier-foot .blink{color:var(--rose);animation:leakblink 1s steps(1) infinite;}
 
@@ -1936,6 +1938,69 @@ function leakDossier(p){
   return {cls,integrity,threat,sector,node,idnum,lat,lon,enc};
 }
 function clsLabel(c){return c==='corrupt'?'CORRUPT':c==='verified'?'VERIFIED':'CLASSIFIED';}
+
+/* ---- REAL image analysis: pull actual characteristics out of the pixels ---- */
+const _imgCache={}, _fullCache={};
+function hueSpectral(h){ // hue(0-360) -> {nm,name} (rough visible-spectrum mapping)
+  if(h<15)return{nm:700,name:'RED'};
+  if(h<45)return{nm:610,name:'ORANGE'};
+  if(h<70)return{nm:575,name:'YELLOW'};
+  if(h<160)return{nm:530,name:'GREEN'};
+  if(h<200)return{nm:495,name:'CYAN'};
+  if(h<255)return{nm:460,name:'BLUE'};
+  if(h<290)return{nm:415,name:'VIOLET'};
+  return{nm:'—',name:'MAGENTA·NON-SPECTRAL'};
+}
+function analyzeImage(p){
+  return new Promise(res=>{
+    if(_imgCache[p.id]){res(_imgCache[p.id]);return;}
+    const img=new Image();
+    img.onload=function(){
+      const W=img.naturalWidth,H=img.naturalHeight;
+      const s=Math.min(1,90/Math.max(W,H));
+      const cw=Math.max(1,Math.round(W*s)),ch=Math.max(1,Math.round(H*s));
+      const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+      const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,cw,ch);
+      let dat;try{dat=ctx.getImageData(0,0,cw,ch).data;}catch(e){const m={ok:false};_imgCache[p.id]=m;res(m);return;}
+      const n=cw*ch;let sumL=0,sumL2=0,sumS=0,rT=0,gT=0,bT=0;const hist=new Array(12).fill(0);
+      for(let i=0;i<dat.length;i+=4){
+        const r=dat[i],g=dat[i+1],b=dat[i+2];rT+=r;gT+=g;bT+=b;
+        const mx=Math.max(r,g,b),mn=Math.min(r,g,b),dl=mx-mn,l=(mx+mn)/2;
+        sumL+=l;sumL2+=l*l;sumS+=mx===0?0:dl/mx;
+        if(dl>22){let h=0;if(mx===r)h=((g-b)/dl)%6;else if(mx===g)h=(b-r)/dl+2;else h=(r-g)/dl+4;h*=60;if(h<0)h+=360;hist[Math.floor(h/30)%12]++;}
+      }
+      const meanL=sumL/n,contrast=Math.sqrt(Math.max(0,sumL2/n-meanL*meanL));
+      let bi=0;for(let i=1;i<12;i++)if(hist[i]>hist[bi])bi=i;
+      const m={ok:true,W,H,
+        lum:Math.round(meanL/255*100),
+        chroma:Math.round(sumS/n*100),
+        contrast:Math.round(Math.min(1,contrast/80)*100),
+        domHue:bi*30+15,
+        rgb:[Math.round(rT/n),Math.round(gT/n),Math.round(bT/n)],
+        size:Math.round(p.data.length*0.75/1024)};
+      _imgCache[p.id]=m;res(m);
+    };
+    img.onerror=function(){const m={ok:false};_imgCache[p.id]=m;res(m);};
+    img.src=p.data;
+  });
+}
+/* merge fictional stable fields + real analysis into derived integrity/threat/status */
+async function leakFull(p){
+  if(_fullCache[p.id])return _fullCache[p.id];
+  const fic=leakDossier(p), m=await analyzeImage(p);
+  let full;
+  if(m.ok){
+    const resPct=Math.min(100,(m.W*m.H)/(1000*750)*100);
+    const integrity=Math.round(Math.min(100,Math.max(8,m.contrast*0.55+resPct*0.45)));
+    const threat=Math.round(Math.min(100,Math.max(4,Math.abs(m.lum-50)*1.4+m.chroma*0.35)));
+    const cls=integrity<45?'corrupt':integrity>74?'verified':'classified';
+    const sp=hueSpectral(m.domHue);
+    full={...fic,integrity,threat,cls,analyzed:true,
+      res:m.W+'×'+m.H,size:m.size,lum:m.lum,chroma:m.chroma,contrast:m.contrast,
+      spectral:sp,swatch:`hsl(${m.domHue},70%,55%)`,rgb:m.rgb};
+  }else{full={...fic,analyzed:false};}
+  _fullCache[p.id]=full;return full;
+}
 function renderPhotos(){
   const list=ld('photos',[]).slice().sort((a,b)=>b.ts-a.ts);
   const grid=document.getElementById('photo-grid');
@@ -1944,32 +2009,47 @@ function renderPhotos(){
   if(!list.length){grid.innerHTML=`<div style="grid-column:1/-1;color:var(--ink4);font-family:'JetBrains Mono',monospace;">// архив пуст — загрузите первый перехваченный кадр</div>`;return;}
   grid.innerHTML='';
   list.forEach(p=>{
-    const d=leakDossier(p);
+    const fic=leakDossier(p);
     const title=p.cap?esc(p.cap):'UNTITLED_FRAME';
     const c=document.createElement('div');c.className='photo-card';
     c.innerHTML=`
       <img src="${p.data}" alt="" loading="lazy">
       <span class="ph-rect tl"></span><span class="ph-rect tr"></span><span class="ph-rect bl"></span><span class="ph-rect br"></span>
-      <span class="ph-tag ${d.cls}">${clsLabel(d.cls)}</span>
+      <span class="ph-tag classified" data-role="tag">SCAN…</span>
       <button class="photo-del" onclick="delPhoto(event,'${p.id}')">×</button>
       <div class="ph-meta">
-        <div class="ph-id">${d.idnum} · ${new Date(p.ts).toLocaleDateString('ru-RU')}</div>
+        <div class="ph-id">${fic.idnum} · ${new Date(p.ts).toLocaleDateString('ru-RU')}</div>
         <div class="ph-title">${title}</div>
-        <div class="ph-bars">
-          <span class="b"><span class="bl">INTEGRITY ${d.integrity}%</span><span class="ph-bar int"><i style="width:${d.integrity}%"></i></span></span>
-          <span class="b"><span class="bl">THREAT ${d.threat}%</span><span class="ph-bar thr"><i style="width:${d.threat}%"></i></span></span>
+        <div class="ph-bars" data-role="bars">
+          <span class="b"><span class="bl">SCANNING…</span><span class="ph-bar int"><i style="width:0%"></i></span></span>
         </div>
       </div>`;
     c.onclick=(e)=>{if(e.target.classList.contains('photo-del'))return;openLightbox(p);};
     grid.appendChild(c);
+    leakFull(p).then(d=>{
+      const tag=c.querySelector('[data-role=tag]');if(tag){tag.className='ph-tag '+d.cls;tag.textContent=clsLabel(d.cls);}
+      const bars=c.querySelector('[data-role=bars]');
+      if(bars)bars.innerHTML=`
+        <span class="b"><span class="bl">INTEGRITY ${d.integrity}%</span><span class="ph-bar int"><i style="width:${d.integrity}%"></i></span></span>
+        <span class="b"><span class="bl">THREAT ${d.threat}%</span><span class="ph-bar thr"><i style="width:${d.threat}%"></i></span></span>`;
+    });
   });
 }
-function openLightbox(p){
+async function openLightbox(p){
   document.body.classList.add('lightbox-open');
-  const d=leakDossier(p);
+  const d=await leakFull(p);
   const title=p.cap?esc(p.cap):'UNTITLED_FRAME';
   const date=new Date(p.ts);
   const ts=date.toLocaleDateString('ru-RU')+' '+date.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const sci=d.analyzed?`
+        <div class="dd-row"><span class="dd-k">RESOLUTION</span><span class="dd-v">${d.res} px</span></div>
+        <div class="dd-row"><span class="dd-k">DATA SIZE</span><span class="dd-v">${d.size} KB</span></div>
+        <div class="dd-row"><span class="dd-k">EXPOSURE</span><span class="dd-v">${d.lum}% LUMA</span></div>
+        <div class="dd-row"><span class="dd-k">CHROMA</span><span class="dd-v">${d.chroma}%</span></div>
+        <div class="dd-row"><span class="dd-k">CONTRAST IDX</span><span class="dd-v">${d.contrast}%</span></div>
+        <div class="dd-row"><span class="dd-k">SPECTRAL PEAK</span><span class="dd-v"><span class="dd-swatch" style="background:${d.swatch}"></span>${d.spectral.nm===''?'':d.spectral.nm}${typeof d.spectral.nm==='number'?'nm ':' '}${d.spectral.name}</span></div>
+        <div class="dd-row"><span class="dd-k">RGB CHANNEL</span><span class="dd-v"><span class="dd-rgb"><i style="background:#ff3b5e;width:${Math.round(d.rgb[0]/255*40)}px"></i><i style="background:#05ffa1;width:${Math.round(d.rgb[1]/255*40)}px"></i><i style="background:#00f0ff;width:${Math.round(d.rgb[2]/255*40)}px"></i></span>${d.rgb[0]}·${d.rgb[1]}·${d.rgb[2]}</span></div>`:`
+        <div class="dd-row"><span class="dd-k">ANALYSIS</span><span class="dd-v" style="color:var(--rose)">PIXEL SCAN FAILED</span></div>`;
   openModal(`<button class="modal-close" onclick="closeModal()">×</button>
    <div class="dossier">
     <div class="dossier-head"><span class="leak-dot"></span>// DECRYPTED RECORD ${d.idnum} — ACCESS LEVEL OVERRIDDEN</div>
@@ -1987,6 +2067,7 @@ function openLightbox(p){
         <div class="dd-row"><span class="dd-k">SECTOR</span><span class="dd-v">${d.sector}</span></div>
         <div class="dd-row"><span class="dd-k">GEO-TAG</span><span class="dd-v">${d.lat}, ${d.lon}</span></div>
         <div class="dd-row"><span class="dd-k">CIPHER</span><span class="dd-v">${d.enc} · BROKEN</span></div>
+        ${sci}
         <div class="dd-row"><span class="dd-k">INTEGRITY</span><span class="dd-v">${d.integrity}%<span class="dd-meter int"><i style="width:${d.integrity}%"></i></span></span></div>
         <div class="dd-row"><span class="dd-k">THREAT LVL</span><span class="dd-v">${d.threat}%<span class="dd-meter thr"><i style="width:${d.threat}%"></i></span></span></div>
       </div>
