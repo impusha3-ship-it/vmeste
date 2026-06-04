@@ -731,10 +731,13 @@ body::before{background:transparent!important;}
 .dossier{font-family:'JetBrains Mono',monospace;}
 .dossier-head{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:0.14em;color:var(--rose);border-bottom:1px dashed var(--border2);padding-bottom:8px;margin-bottom:14px;}
 .dossier-head .leak-dot{flex:none;}
-.dossier-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:18px;}
+.dossier-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:18px;align-items:start;}
 @media(max-width:640px){.dossier-grid{grid-template-columns:1fr;}}
-.dossier-imgwrap{position:relative;border:1px solid var(--border2);overflow:hidden;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));}
-.lightbox-img{width:100%;max-height:64vh;object-fit:cover;display:block;filter:saturate(0.7) contrast(1.1)!important;box-shadow:none;border:none;}
+/* landscape photos: image goes full-width on top, data below — no ugly crop */
+.dossier.wide .dossier-grid{grid-template-columns:1fr;}
+.dossier-imgwrap{position:relative;border:1px solid var(--border2);overflow:hidden;background:#05080d;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));}
+.lightbox-img{width:100%;max-height:58vh;object-fit:contain;display:block;margin:0 auto;background:#05080d;filter:saturate(0.7) contrast(1.1)!important;box-shadow:none;border:none;}
+.dossier.wide .lightbox-img{max-height:52vh;}
 .dossier-imgwrap .ph-rect{width:22px;height:22px;opacity:0.8;}
 .dossier-data .dd-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;}
 .dossier-data .dd-k{color:var(--ink4);letter-spacing:0.08em;}
@@ -2050,8 +2053,9 @@ async function openLightbox(p){
         <div class="dd-row"><span class="dd-k">SPECTRAL PEAK</span><span class="dd-v"><span class="dd-swatch" style="background:${d.swatch}"></span>${d.spectral.nm===''?'':d.spectral.nm}${typeof d.spectral.nm==='number'?'nm ':' '}${d.spectral.name}</span></div>
         <div class="dd-row"><span class="dd-k">RGB CHANNEL</span><span class="dd-v"><span class="dd-rgb"><i style="background:#ff3b5e;width:${Math.round(d.rgb[0]/255*40)}px"></i><i style="background:#05ffa1;width:${Math.round(d.rgb[1]/255*40)}px"></i><i style="background:#00f0ff;width:${Math.round(d.rgb[2]/255*40)}px"></i></span>${d.rgb[0]}·${d.rgb[1]}·${d.rgb[2]}</span></div>`:`
         <div class="dd-row"><span class="dd-k">ANALYSIS</span><span class="dd-v" style="color:var(--rose)">PIXEL SCAN FAILED</span></div>`;
+  const wide=d.analyzed&&d.rgb&&_imgCache[p.id]&&_imgCache[p.id].W>_imgCache[p.id].H*1.15;
   openModal(`<button class="modal-close" onclick="closeModal()">×</button>
-   <div class="dossier">
+   <div class="dossier${wide?' wide':''}">
     <div class="dossier-head"><span class="leak-dot"></span>// DECRYPTED RECORD ${d.idnum} — ACCESS LEVEL OVERRIDDEN</div>
     <div class="dossier-grid">
       <div class="dossier-imgwrap">
