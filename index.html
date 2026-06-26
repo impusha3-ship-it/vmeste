@@ -372,6 +372,9 @@ h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
 .ach-card.done.ach-auto{border-style:solid!important;animation:autoGlow 2.6s ease-in-out infinite;}
 .ach-card.done .ach-auto-badge{color:#04121a;background:var(--gold);border-color:var(--gold);}
 @keyframes autoGlow{0%,100%{box-shadow:0 0 0 1px var(--gold),0 0 14px -3px rgba(0,240,255,0.5)}50%{box-shadow:0 0 0 1px var(--gold),0 0 24px -2px rgba(0,240,255,0.9)}}
+.ach-link{cursor:pointer;}
+@keyframes cnFlower{0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1);}100%{opacity:0;transform:translate(var(--fx),var(--fy)) rotate(var(--fr)) scale(0.4);}}
+.cn-petal{position:fixed;pointer-events:none;z-index:9999;font-size:18px;animation:cnFlower var(--fd) cubic-bezier(0.2,0.8,0.4,1) forwards;will-change:transform,opacity;}
 .ach-card.done::after{width:100%;height:2px;}
 .ach-card.done::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--gold-light),var(--gold));z-index:2;}
 .ach-card.done .ach-text{color:var(--ink);}
@@ -2809,7 +2812,7 @@ function renderAch(){
     items.forEach(a=>{
       tot++;if(done[a.id])comp++;
       const c=document.createElement('div');
-      c.className='ach-card'+(done[a.id]?' done':'')+(a.auto?' ach-auto':'');
+      c.className='ach-card'+(done[a.id]?' done':'')+(a.auto?' ach-auto':'')+(a.url?' ach-link':'');
       const delBtn=String(a.id).startsWith('c')?`<button class="ach-del" title="Удалить" onclick="delAch(event,'${a.id}')">×</button>`:'';
       const badge=a.auto?`<div class="ach-auto-badge">${done[a.id]?'★ SYNC':'⚷ AUTO'}</div>`:'';
       c.innerHTML=`${delBtn}${badge}<div class="ach-icon">${achIcon(a)}</div><div class="ach-text">${esc(a.title)}</div><div class="ach-tick">✓</div>`;
@@ -2826,6 +2829,35 @@ function renderAch(){
   });
   document.getElementById('ach-count').textContent=comp+' из '+tot;
   requestAnimationFrame(fitAchTexts);
+  document.querySelectorAll('.ach-link').forEach(card=>{
+    let timer=null;
+    card.addEventListener('mouseenter',function(){
+      spawnCnFlowers(card);
+      timer=setInterval(()=>spawnCnFlowers(card),600);
+    });
+    card.addEventListener('mouseleave',function(){clearInterval(timer);timer=null;});
+  });
+}
+const CN_PETALS=['🌸','🌺','🌼','🌹','🏮','🪷','🌸','🌺'];
+function spawnCnFlowers(card){
+  const rect=card.getBoundingClientRect();
+  const count=6;
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');
+    el.className='cn-petal';
+    el.textContent=CN_PETALS[Math.floor(Math.random()*CN_PETALS.length)];
+    const angle=(Math.random()*360)*Math.PI/180;
+    const dist=60+Math.random()*80;
+    const fx=(Math.cos(angle)*dist).toFixed(1)+'px';
+    const fy=(Math.sin(angle)*dist-40).toFixed(1)+'px';
+    const fr=((Math.random()-0.5)*360).toFixed(1)+'deg';
+    const fd=(0.7+Math.random()*0.6).toFixed(2)+'s';
+    const sx=rect.left+Math.random()*rect.width;
+    const sy=rect.top+Math.random()*rect.height;
+    el.style.cssText+=`left:${sx}px;top:${sy}px;--fx:${fx};--fy:${fy};--fr:${fr};--fd:${fd};`;
+    document.body.appendChild(el);
+    el.addEventListener('animationend',()=>el.remove());
+  }
 }
 function fitAchTexts(){
   document.querySelectorAll('#ach-list .ach-text').forEach(function(el){
