@@ -58,13 +58,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 #lb-nav button:hover { background:rgba(255,255,255,0.35); }
 
 /* ratings */
-.rating { display:flex; align-items:center; gap:3px; margin-top:10px; flex-wrap:wrap; }
-.rating-label { font-size:0.68rem; color:#aaa; margin-right:2px; white-space:nowrap; }
-.rating-btn { width:22px; height:22px; border-radius:4px; border:1px solid #ddd; background:#f8f8f5; color:#bbb; font-size:0.65rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.1s, color 0.1s, border-color 0.1s; }
-.rating-btn.active { background:#1a1a1a; border-color:#1a1a1a; color:#fff; }
-.rating-btn:hover { border-color:#888; color:#555; }
-.rating-val { font-size:0.72rem; font-weight:700; color:#1a1a1a; margin-left:4px; display:none; }
-.rating-val.show { display:block; }
+.rating { margin-top:10px; }
+.rating-row { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
+.rating-row:last-child { margin-bottom:0; }
+.rating-who { font-size:0.65rem; font-weight:600; width:32px; flex-shrink:0; }
+.rating-who.d { color:#00c2d9; }
+.rating-who.o { color:#ff3aaa; }
+.rating-btn { width:20px; height:20px; border-radius:3px; border:1px solid #e0ddd8; background:#f8f8f5; color:#ccc; font-size:0.6rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 0.1s, color 0.1s, border-color 0.1s; padding:0; }
+.rating-btn.active-d { background:#00c2d9; border-color:#00c2d9; color:#fff; }
+.rating-btn.active-o { background:#ff3aaa; border-color:#ff3aaa; color:#fff; }
+.rating-btn.mine:hover { border-color:#888; color:#555; }
+.rating-btn.other { cursor:default; }
+.rating-val { font-size:0.7rem; font-weight:700; margin-left:4px; }
+.rating-val.d { color:#00c2d9; }
+.rating-val.o { color:#ff3aaa; }
 </style>
 </head>
 <body>
@@ -544,63 +551,94 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowLeft') lbPrev();
 });
 
-// ratings
-const RATING_KEY = 'shanghai-ratings';
-function loadRatings() { try { return JSON.parse(localStorage.getItem(RATING_KEY)||'{}'); } catch(e) { return {}; } }
-function saveRating(name, val) { const r=loadRatings(); r[name]=val; localStorage.setItem(RATING_KEY, JSON.stringify(r)); }
+// ratings via Firebase (same DB as vmeste app)
+const FB = 'https://vmeste-a8b90-default-rtdb.firebaseio.com/app/shanghaiRatings';
+const ME = localStorage.getItem('me') || 'd';
+const OTHER = ME === 'd' ? 'o' : 'd';
+const WHO_NAME = { d: 'Дима', o: 'Оля' };
+const WHO_CLASS = { d: 'active-d', o: 'active-o' };
 
-function initRatings() {
-  const ratings = loadRatings();
-  document.querySelectorAll('.card').forEach(function(card) {
-    const nameEl = card.querySelector('.name');
-    if (!nameEl) return;
-    const name = nameEl.childNodes[0].textContent.trim();
-    const body = card.querySelector('.body');
-    if (!body) return;
+let allRatings = { d: {}, o: {} };
 
+function placeName(card) {
+  const el = card.querySelector('.name');
+  return el ? el.childNodes[0].textContent.trim() : null;
+}
+
+function fetchRatings() {
+  return fetch(FB + '.json').then(r => r.json()).then(data => {
+    if (data && typeof data === 'object') {
+      allRatings.d = data.d || {};
+      allRatings.o = data.o || {};
+    }
+  }).catch(() => {});
+}
+
+function setRating(name, val) {
+  if (!allRatings[ME]) allRatings[ME] = {};
+  allRatings[ME][name] = val;
+  fetch(FB + '/' + ME + '/' + encodeURIComponent(name) + '.json', {
+    method: 'PUT', body: JSON.stringify(val)
+  }).catch(() => {});
+  renderAllRatings();
+}
+
+function buildRatingRow(card) {
+  const name = placeName(card);
+  if (!name) return;
+  const body = card.querySelector('.body');
+  if (!body) return;
+
+  let wrap = body.querySelector('.rating');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'rating';
+    body.appendChild(wrap);
+  }
+  wrap.innerHTML = '';
+
+  [ME, OTHER].forEach(function(who) {
+    const val = (allRatings[who] && allRatings[who][name]) || 0;
     const row = document.createElement('div');
-    row.className = 'rating';
-    row.innerHTML = '<span class="rating-label">Оценка:</span>';
+    row.className = 'rating-row';
 
-    const saved = ratings[name] || 0;
+    const label = document.createElement('span');
+    label.className = 'rating-who ' + who;
+    label.textContent = WHO_NAME[who];
+    row.appendChild(label);
+
     for (let i = 1; i <= 10; i++) {
       const btn = document.createElement('button');
-      btn.className = 'rating-btn' + (i <= saved ? ' active' : '');
+      const isActive = i <= val;
+      btn.className = 'rating-btn' + (isActive ? ' ' + WHO_CLASS[who] : '') + (who === ME ? ' mine' : ' other');
       btn.textContent = i;
-      btn.onclick = function(e) {
-        e.stopPropagation();
-        const newVal = (saved === i && i === parseInt(btn.textContent)) ? 0 : i;
-        saveRating(name, newVal);
-        updateRatingRow(row, name, newVal);
-      };
+      if (who === ME) {
+        btn.onclick = (function(n, v) { return function(e) {
+          e.stopPropagation();
+          setRating(n, v === val ? 0 : v);
+        }; })(name, i);
+      }
       row.appendChild(btn);
     }
 
-    const valEl = document.createElement('span');
-    valEl.className = 'rating-val' + (saved ? ' show' : '');
-    valEl.textContent = saved ? saved + '/10' : '';
-    row.appendChild(valEl);
+    if (val) {
+      const v = document.createElement('span');
+      v.className = 'rating-val ' + who;
+      v.textContent = val + '/10';
+      row.appendChild(v);
+    }
 
-    body.appendChild(row);
+    wrap.appendChild(row);
   });
 }
 
-function updateRatingRow(row, name, val) {
-  const btns = row.querySelectorAll('.rating-btn');
-  btns.forEach(function(btn, i) {
-    btn.className = 'rating-btn' + ((i+1) <= val ? ' active' : '');
-    btn.onclick = function(e) {
-      e.stopPropagation();
-      const newVal = val === (i+1) ? 0 : (i+1);
-      saveRating(name, newVal);
-      updateRatingRow(row, name, newVal);
-    };
-  });
-  const valEl = row.querySelector('.rating-val');
-  if (valEl) { valEl.textContent = val ? val+'/10' : ''; valEl.className = 'rating-val' + (val ? ' show' : ''); }
+function renderAllRatings() {
+  document.querySelectorAll('.card').forEach(buildRatingRow);
 }
 
-initRatings();
+fetchRatings().then(renderAllRatings);
+// refresh every 30s to pick up the other person's ratings
+setInterval(function() { fetchRatings().then(renderAllRatings); }, 30000);
 </script>
 </body>
 </html>
