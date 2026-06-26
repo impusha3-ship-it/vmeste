@@ -1768,7 +1768,7 @@ function evCardHTML(ev,now){
   return `<div class="ev-card${soon?' soon':''}${passed?' ev-passed':''}">
       <div class="ev-count">${countTxt}</div>
       <div class="ev-mid">
-        <div class="ev-title">${esc(ev.title)}</div>
+        <div class="ev-title">${/шанхай/i.test(ev.title)?esc(ev.title).replace(/шанхай/i,m=>`<a href="shanghai-guide/index.html" style="color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;" onclick="event.stopPropagation()">${m}</a>`):esc(ev.title)}</div>
         <div class="ev-date">${dateStr} · <span class="ev-tag">${tag}</span></div>
       </div>
       <button class="ev-del" onclick="delEvent('${ev.id}')">×</button>
