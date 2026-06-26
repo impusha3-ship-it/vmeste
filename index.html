@@ -2814,7 +2814,7 @@ function renderAch(){
       const badge=a.auto?`<div class="ach-auto-badge">${done[a.id]?'★ SYNC':'⚷ AUTO'}</div>`:'';
       c.innerHTML=`${delBtn}${badge}<div class="ach-icon">${achIcon(a)}</div><div class="ach-text">${esc(a.title)}</div><div class="ach-tick">✓</div>`;
       c.onclick=(e)=>{
-        if(a.url){window.open(a.url,'_blank');return;}
+        if(a.url){location.href=a.url;return;}
         if(a.id==='a29'){return;} // auto-only: unlock by 30-day streak
         const d2=ld('ach',{});const willDo=!d2[a.id];d2[a.id]=willDo;sv('ach',d2);renderAch();
         if(willDo){const r=c.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2);playAch();petGain('ach_'+a.id,XP.ach);}
