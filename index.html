@@ -1344,6 +1344,7 @@ const ACHS=[
   {id:'a26',icon:'⛰️',title:'Сходить на гору ночью',cat:'Вместе'},
   {id:'a27',icon:'🌃',title:'Переночевать в Уссурийске у Кати',cat:'Путешествия'},
   {id:'a28',icon:'🌏',title:'Поехать в Новую Зеландию',cat:'Путешествия'},
+  {id:'a33',icon:'🇨🇳',title:'Шанхай',cat:'Путешествия',url:'shanghai-guide/index.html'},
   {id:'a29',icon:'🔥',title:'30 дней подряд держать стрик зарядки и таблеток',cat:'Остальное',auto:true},
   {id:'a30',title:'Посетить Кронштадт',cat:'Города',svg:'c_kron'},
   {id:'a31',title:'Посетить Калининград',cat:'Города',svg:'c_kali'},
@@ -2813,6 +2814,7 @@ function renderAch(){
       const badge=a.auto?`<div class="ach-auto-badge">${done[a.id]?'★ SYNC':'⚷ AUTO'}</div>`:'';
       c.innerHTML=`${delBtn}${badge}<div class="ach-icon">${achIcon(a)}</div><div class="ach-text">${esc(a.title)}</div><div class="ach-tick">✓</div>`;
       c.onclick=(e)=>{
+        if(a.url){window.open(a.url,'_blank');return;}
         if(a.id==='a29'){return;} // auto-only: unlock by 30-day streak
         const d2=ld('ach',{});const willDo=!d2[a.id];d2[a.id]=willDo;sv('ach',d2);renderAch();
         if(willDo){const r=c.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2);playAch();petGain('ach_'+a.id,XP.ach);}

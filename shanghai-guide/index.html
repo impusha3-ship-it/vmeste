@@ -1,0 +1,606 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Шанхай — путеводитель</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; }
+
+.header { background: #1a1a1a; color: #fff; padding: 2.5rem 2rem 2rem; }
+.header h1 { font-size: 2rem; font-weight: 600; letter-spacing: -0.02em; }
+.header .hotel { margin-top: 0.5rem; font-size: 0.85rem; color: #aaa; }
+
+.section { padding: 2rem; max-width: 1280px; margin: 0 auto; }
+.section-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin-bottom: 1.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e0ddd8; }
+.section-title.far { color: #b84a10; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 2.5rem; }
+
+.card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* photos area */
+.photos { display: grid; gap: 2px; background: #ddd; height: 160px; cursor: zoom-in; }
+.photos.two { grid-template-columns: 1fr 1fr; }
+.photos.three { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+.photos.three img:first-child { grid-row: 1 / 3; }
+.photos img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.15s; }
+.photos img:hover { opacity: 0.92; }
+.photos.no-photo { background: #ece9e4; cursor: default; display: flex; align-items: center; justify-content: center; }
+.photos.no-photo span { font-size: 0.75rem; color: #b0a898; }
+
+.body { padding: 14px 16px 18px; }
+.tag { display: inline-block; font-size: 0.68rem; font-weight: 500; padding: 3px 8px; border-radius: 4px; background: #f0ede8; color: #999; margin-bottom: 8px; }
+
+.name-link { text-decoration: none; color: inherit; display: block; margin-bottom: 5px; }
+.name-link:hover .name { text-decoration: underline; text-underline-offset: 2px; }
+.name { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+.name .ext { font-size: 0.65rem; color: #bbb; flex-shrink: 0; margin-top: 1px; }
+
+.travel { font-size: 0.74rem; font-weight: 500; margin-bottom: 7px; display: flex; align-items: center; gap: 4px; }
+.travel.walk  { color: #1e8a4a; }
+.travel.taxi  { color: #1760a0; }
+.travel.metro { color: #9040b0; }
+.travel.far   { color: #b84a10; }
+.travel.train { color: #7b2d9e; }
+
+.desc { font-size: 0.81rem; color: #555; line-height: 1.58; }
+
+/* lightbox */
+#lb { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:9999; align-items:center; justify-content:center; cursor:zoom-out; }
+#lb.open { display:flex; }
+#lb-img { max-width:92vw; max-height:90vh; object-fit:contain; border-radius:4px; box-shadow:0 4px 40px rgba(0,0,0,0.6); }
+#lb-close { position:absolute; top:18px; right:22px; color:#fff; font-size:1.8rem; cursor:pointer; opacity:0.7; line-height:1; }
+#lb-close:hover { opacity:1; }
+#lb-nav { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:6px; }
+#lb-nav button { background:rgba(255,255,255,0.2); border:none; color:#fff; padding:6px 14px; border-radius:20px; cursor:pointer; font-size:0.8rem; }
+#lb-nav button:hover { background:rgba(255,255,255,0.35); }
+
+/* ratings */
+.rating { display:flex; align-items:center; gap:3px; margin-top:10px; flex-wrap:wrap; }
+.rating-label { font-size:0.68rem; color:#aaa; margin-right:2px; white-space:nowrap; }
+.rating-btn { width:22px; height:22px; border-radius:4px; border:1px solid #ddd; background:#f8f8f5; color:#bbb; font-size:0.65rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.1s, color 0.1s, border-color 0.1s; }
+.rating-btn.active { background:#1a1a1a; border-color:#1a1a1a; color:#fff; }
+.rating-btn:hover { border-color:#888; color:#555; }
+.rating-val { font-size:0.72rem; font-weight:700; color:#1a1a1a; margin-left:4px; display:none; }
+.rating-val.show { display:block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Шанхай</h1>
+  <div class="hotel">Отправная точка: Campanile Shanghai Natural History Museum Hotel · 1455 Nansuzhou Rd, Jing'an &nbsp;·&nbsp; Нажми на фото для увеличения, на название — для обзора</div>
+</div>
+
+<div id="lb">
+  <span id="lb-close" onclick="closeLb()">×</span>
+  <img id="lb-img" src="" alt="">
+  <div id="lb-nav">
+    <button onclick="lbPrev()">← пред</button>
+    <button onclick="lbNext()">след →</button>
+  </div>
+</div>
+
+<div class="section">
+
+<p class="section-title">Рядом с отелем — пешком</p>
+<div class="grid">
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/suzhou-creek.jpg" data-full="images/suzhou-creek.jpg" alt="Suzhou Creek">
+    </div>
+    <div class="body">
+      <span class="tag">Набережная · Прогулка</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Suzhou+Creek+Shanghai" target="_blank">
+        <p class="name">Suzhou Creek <span class="ext">↗</span></p>
+      </a>
+      <div class="travel walk">🚶 1 мин пешком — прямо у отеля</div>
+      <p class="desc">Исторический канал с арт-галереями и кофейнями вдоль берегов. Менее туристичная альтернатива Бунду — здесь ещё живёт «старый» Шанхай.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/natural-history.jpg" data-full="images/natural-history.jpg" alt="Natural History Museum">
+    </div>
+    <div class="body">
+      <span class="tag">Музей · Наука</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Natural+History+Museum+Shanghai" target="_blank">
+        <p class="name">Natural History Museum <span class="ext">↗</span></p>
+      </a>
+      <div class="travel walk">🚶 3 мин пешком (200 м)</div>
+      <p class="desc">Огромный музей в форме наутилуса с динозаврами, залом эволюции и живым садом. Одна из лучших архитектур среди природоведческих музеев мира.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>Fotografiska · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Фото · Галерея</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Fotografiska+Shanghai" target="_blank">
+        <p class="name">Fotografiska <span class="ext">↗</span></p>
+      </a>
+      <div class="travel walk">🚶 10 мин пешком · 127 Guangfu Rd (вдоль реки)</div>
+      <p class="desc">Международный фотомузей шведского бренда в историческом складе 1931 года на Suzhou Creek. Временные выставки мировых фотографов.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/m50.jpg" data-full="images/m50.jpg" alt="M50">
+    </div>
+    <div class="body">
+      <span class="tag">Арт · Галереи</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=M50+Art+District+Shanghai" target="_blank">
+        <p class="name">M50 Art District <span class="ext">↗</span></p>
+      </a>
+      <div class="travel walk">🚶 15–20 мин пешком (вдоль Suzhou Creek)</div>
+      <p class="desc">Бывшие текстильные фабрики: 100+ студий художников, галереи современного искусства, стрит-арт и кофейни в старых цехах.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/1000trees.jpg" data-full="images/1000trees.jpg" alt="1000 Trees">
+    </div>
+    <div class="body">
+      <span class="tag">Архитектура · Шопинг</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=1000+Trees+Shanghai" target="_blank">
+        <p class="name">1000 Trees <span class="ext">↗</span></p>
+      </a>
+      <div class="travel walk">🚶 20 мин пешком / <span style="color:#1760a0">🚕 5 мин такси</span></div>
+      <p class="desc">Торговый комплекс по проекту Томаса Хезервика: тысяча деревьев на ступенчатых террасах. Архитектурная икона нового Шанхая.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="section-title">Шанхай — рукой подать (на такси)</p>
+<div class="grid">
+
+  <div class="card">
+    <div class="photos two" onclick="openLb(this)">
+      <img src="images/jade-buddha.jpg" data-full="images/jade-buddha.jpg" alt="Jade Buddha Temple">
+      <img src="images/jade-buddha2.jpg" data-full="images/jade-buddha2.jpg" alt="Jade Buddha Temple interior">
+    </div>
+    <div class="body">
+      <span class="tag">Храм · Духовность</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d311596-Reviews-Jade_Buddha_Temple-Shanghai.html" target="_blank">
+        <p class="name">Jade Buddha Temple <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 15 мин такси (~3 км)</div>
+      <p class="desc">Действующий буддийский монастырь 1882 года с двумя нефритовыми статуями Будды. Атмосфера благовоний, монахи, тихий двор среди города.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>MOCA · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Арт · Современность</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=MOCA+Museum+Contemporary+Art+Shanghai" target="_blank">
+        <p class="name">Музей современного искусства (MOCA) <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 20 мин такси (~4 км)</div>
+      <p class="desc">Стеклянный павильон в People's Park с постоянной экспозицией и сменными выставками. Ресторан с террасой на крыше.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>Anfu Road · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Улица · Кофейни</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=French+Concession+Shanghai" target="_blank">
+        <p class="name">Anfu Road <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 20 мин такси (~5 км)</div>
+      <p class="desc">Платановая улица в сердце Французской концессии: независимые бутики, кофейни, винтажные магазины. Лучший адрес для прогулки.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/french-concession.jpg" data-full="images/french-concession.jpg" alt="French Concession">
+    </div>
+    <div class="body">
+      <span class="tag">Район · История</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=French+Concession+Shanghai" target="_blank">
+        <p class="name">Французский квартал <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 20 мин такси (~5 км)</div>
+      <p class="desc">Исторический район с особняками колониальной эпохи и платановыми аллеями. Самый романтичный район Шанхая — можно гулять весь день.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/xintiandi.jpg" data-full="images/xintiandi.jpg" alt="Xintiandi">
+    </div>
+    <div class="body">
+      <span class="tag">Ужин · Шикумэнь</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Xintiandi+Shanghai" target="_blank">
+        <p class="name">Xintiandi <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 25 мин такси (~5 км)</div>
+      <p class="desc">Реновированный квартал традиционных домов-шикумэнь с ресторанами и бутиками. Лучшее место для вечернего ужина.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/1933.jpg" data-full="images/1933.jpg" alt="1933 Old Millfun">
+    </div>
+    <div class="body">
+      <span class="tag">Арт · Архитектура</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d1438183-Reviews-1933_Old_Millfun-Shanghai.html" target="_blank">
+        <p class="name">1933 Old Millfun <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 25 мин такси (~6 км)</div>
+      <p class="desc">Бывшая скотобойня 1933 года — уникальный бетонный лабиринт с галереями и ресторанами. Архитектура сама по себе главный экспонат.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>1192 Street · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Улица · Еда</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d8671019-Reviews-1192_Pingjian_Road-Shanghai.html" target="_blank">
+        <p class="name">1192 Old Shanghai Style Street <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 25 мин такси (~6 км)</div>
+      <p class="desc">Историческая улица, воссоздающая атмосферу Шанхая эпохи республики: традиционные закусочные, лавки мастеров, уличная еда.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>Haus Nowhere · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Арт · Магазины</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Haus+Nowhere+Shanghai" target="_blank">
+        <p class="name">Haus Nowhere <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 25 мин такси (Французская концессия)</div>
+      <p class="desc">Концептуальное арт-пространство: галерея, дизайнерские магазины и кафе под одной крышей. Курирует локальные бренды и независимых дизайнеров.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/columbia-circle.jpg" data-full="images/columbia-circle.jpg" alt="Columbia Circle">
+    </div>
+    <div class="body">
+      <span class="tag">Бары · 1920-е</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Columbia+Circle+Shanghai" target="_blank">
+        <p class="name">Columbia Circle <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 30 мин такси (~7 км)</div>
+      <p class="desc">Реновированный квартал в стиле 1920-х с барами, ресторанами и культурными пространствами. Место у местных, менее туристичное чем центр.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/tianzifang.jpg" data-full="images/tianzifang.jpg" alt="Tianzifang">
+    </div>
+    <div class="body">
+      <span class="tag">Переулки · Шопинг</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d1382501-Reviews-Tianzifang-Shanghai.html" target="_blank">
+        <p class="name">Tianzifang <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 30 мин такси (~7 км)</div>
+      <p class="desc">Лабиринт переулков-шикумэнь с мастерскими, кофейнями и сувенирными лавками. Камерная альтернатива Синьтяньди — тише, аутентичнее, уютнее.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>Starry Sky Art Museum · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Иммерсив · Свет</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d21232547-Reviews-Starry_Sky_Art_Museum-Shanghai.html" target="_blank">
+        <p class="name">Starry Sky Art Museum <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 30 мин такси (уточнить адрес)</div>
+      <p class="desc">Иммерсивный музей со световыми инсталляциями и проекциями звёздного неба. Один из лучших адресов для красивых фотографий.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>LV корабль · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Бутик · Арт-объект</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Louis+Vuitton+Bund+Shanghai" target="_blank">
+        <p class="name">Louis Vuitton (корабль на Бунде) <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 35 мин такси (~8 км)</div>
+      <p class="desc">Флагманский плавучий бутик LV в форме корабля у набережной Бунд. Арт-объект с выставочными пространствами — красиво снаружи даже без покупок.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>Warehouse No.3 · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Склад · Рестораны</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Warehouse+No3+Shanghai+Binjiang" target="_blank">
+        <p class="name">Warehouse No.3 <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 35 мин такси (~8 км)</div>
+      <p class="desc">Реконструированный склад на берегу Хуанпу: рестораны, бары и концептуальные магазины с видами на реку и Бунд.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos two" onclick="openLb(this)">
+      <img src="images/yu-garden.jpg" data-full="images/yu-garden.jpg" alt="Yu Garden">
+      <img src="images/yu-garden-night.jpg" data-full="images/yu-garden-night.jpg" alt="Yu Garden night">
+    </div>
+    <div class="body">
+      <span class="tag">Сад · Вечер</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d324259-Reviews-Yu_Garden-Shanghai.html" target="_blank">
+        <p class="name">Yu Garden <span class="ext">↗</span></p>
+      </a>
+      <div class="travel taxi">🚕 35 мин такси (~8 км)</div>
+      <p class="desc">Классический сад эпохи Мин с павильонами, прудами и скалами. Вечером вокруг оживает базарная площадь с фонарями и уличной едой.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="section-title">Далеко от центра — 40–90 мин</p>
+<div class="grid">
+
+  <div class="card">
+    <div class="photos three" onclick="openLb(this)">
+      <img src="images/expo-park.jpg" data-full="images/expo-park.jpg" alt="Expo Park">
+      <img src="images/expo-park2.jpg" data-full="images/expo-park2.jpg" alt="Expo Park 2">
+      <img src="images/expo-park3.jpg" data-full="images/expo-park3.jpg" alt="Expo Park 3">
+    </div>
+    <div class="body">
+      <span class="tag">Парк · Оранжерея</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Expo+Culture+Park+Shanghai" target="_blank">
+        <p class="name">Expo Cultural Park + Greenhouse Garden <span class="ext">↗</span></p>
+      </a>
+      <div class="travel far">🚕 40–45 мин такси (~18 км, Пудун)</div>
+      <p class="desc">Парк на месте выставки 2010 года с современной архитектурой и арт-инсталляциями. Включает огромную тропическую оранжерею (Greenhouse Garden).</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/lujiazui.jpg" data-full="images/lujiazui.jpg" alt="Lujiazui">
+    </div>
+    <div class="body">
+      <span class="tag">Парк · Виды</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Lujiazui+Central+Green+Shanghai" target="_blank">
+        <p class="name">Парк рядом с Жемчужиной (Луцзяцзуй) <span class="ext">↗</span></p>
+      </a>
+      <div class="travel far">🚕 40 мин такси (~16 км) / 🚇 40 мин метро</div>
+      <p class="desc">Круговой сквер в центре Луцзяцзуй с панорамными видами на три башни: Цзинь Мао, Shanghai Tower и Oriental Pearl. Бесплатно.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/science-museum.jpg" data-full="images/science-museum.jpg" alt="Science Museum">
+    </div>
+    <div class="body">
+      <span class="tag">Наука · Интерактив</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Science+Technology+Museum+Shanghai" target="_blank">
+        <p class="name">Музей науки и технологии <span class="ext">↗</span></p>
+      </a>
+      <div class="travel metro">🚇 40 мин метро (линия 2) / 🚕 35 мин такси</div>
+      <p class="desc">Интерактивный технологический музей с роботами, VR-зонами и космическим разделом. Хорошо для детей и взрослых.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/guangfulin.jpg" data-full="images/guangfulin.jpg" alt="Guangfulin">
+    </div>
+    <div class="body">
+      <span class="tag">Археология · Парк</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Guangfulin+Relics+Park+Shanghai" target="_blank">
+        <p class="name">Guangfulin <span class="ext">↗</span></p>
+      </a>
+      <div class="travel far">🚕 50–55 мин такси (~28 км, Сунцзян)</div>
+      <p class="desc">Археологический парк с раскопками 3000-летней давности. Стеклянные павильоны буквально парят над водой над древними находками.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/wild-animal.jpg" data-full="images/wild-animal.jpg" alt="Wild Animal Park">
+    </div>
+    <div class="body">
+      <span class="tag">Природа · Семья</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Shanghai+Wild+Animal+Park" target="_blank">
+        <p class="name">Shanghai Wild Animal Park <span class="ext">↗</span></p>
+      </a>
+      <div class="travel far">🚕 60–70 мин на машине (~45 км, Пудун)</div>
+      <p class="desc">Зоопарк сафари-формата с 10 000 животных. Можно проехать через открытые вольеры со львами, тиграми и жирафами на автобусе.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos two" onclick="openLb(this)">
+      <img src="images/astronomy.jpg" data-full="images/astronomy.jpg" alt="Astronomy Museum exterior">
+      <img src="images/astronomy2.jpg" data-full="images/astronomy2.jpg" alt="Astronomy Museum interior">
+    </div>
+    <div class="body">
+      <span class="tag">Наука · Архитектура</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Shanghai+Astronomy+Museum+Lingang" target="_blank">
+        <p class="name">Планетарий (Shanghai Astronomy Museum) <span class="ext">↗</span></p>
+      </a>
+      <div class="travel metro">🚇 75–90 мин (метро линия 16, Линган)</div>
+      <p class="desc">Один из крупнейших астрономических музеев мира по проекту Ennead Architects. Здание — шедевр без единого прямого угла.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos" onclick="openLb(this)">
+      <img src="images/legoland.jpg" data-full="images/legoland.jpg" alt="Legoland Shanghai">
+    </div>
+    <div class="body">
+      <span class="tag">Парк · Аттракционы</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Legoland+Shanghai" target="_blank">
+        <p class="name">Legoland <span class="ext">↗</span></p>
+      </a>
+      <div class="travel far">🚇 90–120 мин (метро линия 22, Цзиньшань)</div>
+      <p class="desc">Крупнейший Леголэнд в мире, открылся в 2025 году. Аттракционы, мини-Шанхай из кубиков, интерактивные зоны для всех возрастов.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos two" onclick="openLb(this)">
+      <img src="images/zhujiajiao.jpg" data-full="images/zhujiajiao.jpg" alt="Zhujiajiao aerial">
+      <img src="images/zhujiajiao2.jpg" data-full="images/zhujiajiao2.jpg" alt="Zhujiajiao bridge">
+    </div>
+    <div class="body">
+      <span class="tag">Водный город · Метро</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Attraction_Review-g308272-d1805650-Reviews-Zhujiajiao_Ancient_Town-Shanghai.html" target="_blank">
+        <p class="name">Чжуцзяцзяо (Zhujiajiao) <span class="ext">↗</span></p>
+      </a>
+      <div class="travel metro">🚇 65–75 мин (метро линия 17)</div>
+      <p class="desc">Водный городок эпохи Мин: каналы, каменные мосты, деревянные лавки и лодочные прогулки. «Венеция Шанхая» в пределах городской черты.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="section-title far">За пределами Шанхая — поезд или машина</p>
+<div class="grid">
+
+  <div class="card">
+    <div class="photos no-photo"><span>Maoshan Forest World · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Природа · Лес</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Maoshan+Forest+World" target="_blank">
+        <p class="name">Maoshan Forest World <span class="ext">↗</span></p>
+      </a>
+      <div class="travel train">🚄 2–2.5 часа поездом (провинция Цзянсу)</div>
+      <p class="desc">Лесной парк с экотропами и кронными мостами среди горных лесов. Идеально для полноценного выезда на природу на целый день.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photos no-photo"><span>Qingshan Lake · фото не найдено</span></div>
+    <div class="body">
+      <span class="tag">Озеро · Бамбук</span>
+      <a class="name-link" href="https://www.tripadvisor.ru/Search?q=Qingshan+Lake+Linan" target="_blank">
+        <p class="name">Qingshan Lake <span class="ext">↗</span></p>
+      </a>
+      <div class="travel train">🚄 2–2.5 часа поездом/автобусом (Линьань, Чжэцзян)</div>
+      <p class="desc">Живописное озеро в горах с бамбуковыми лесами и пешеходными маршрутами. Отличный однодневный выезд на природу.</p>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+let lbImages = [];
+let lbIndex = 0;
+
+function openLb(photosEl) {
+  const imgs = photosEl.querySelectorAll('img');
+  if (!imgs.length) return;
+  lbImages = Array.from(imgs).map(i => i.dataset.full || i.src);
+  lbIndex = 0;
+  showLbImage();
+  document.getElementById('lb').classList.add('open');
+  document.getElementById('lb-nav').style.display = lbImages.length > 1 ? 'flex' : 'none';
+}
+
+function showLbImage() {
+  document.getElementById('lb-img').src = lbImages[lbIndex];
+}
+
+function lbPrev() {
+  lbIndex = (lbIndex - 1 + lbImages.length) % lbImages.length;
+  showLbImage();
+}
+
+function lbNext() {
+  lbIndex = (lbIndex + 1) % lbImages.length;
+  showLbImage();
+}
+
+function closeLb() {
+  document.getElementById('lb').classList.remove('open');
+  document.getElementById('lb-img').src = '';
+  lbImages = [];
+}
+
+document.getElementById('lb').addEventListener('click', function(e) {
+  if (e.target === this) closeLb();
+});
+
+document.addEventListener('keydown', function(e) {
+  const lb = document.getElementById('lb');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowRight') lbNext();
+  if (e.key === 'ArrowLeft') lbPrev();
+});
+
+// ratings
+const RATING_KEY = 'shanghai-ratings';
+function loadRatings() { try { return JSON.parse(localStorage.getItem(RATING_KEY)||'{}'); } catch(e) { return {}; } }
+function saveRating(name, val) { const r=loadRatings(); r[name]=val; localStorage.setItem(RATING_KEY, JSON.stringify(r)); }
+
+function initRatings() {
+  const ratings = loadRatings();
+  document.querySelectorAll('.card').forEach(function(card) {
+    const nameEl = card.querySelector('.name');
+    if (!nameEl) return;
+    const name = nameEl.childNodes[0].textContent.trim();
+    const body = card.querySelector('.body');
+    if (!body) return;
+
+    const row = document.createElement('div');
+    row.className = 'rating';
+    row.innerHTML = '<span class="rating-label">Оценка:</span>';
+
+    const saved = ratings[name] || 0;
+    for (let i = 1; i <= 10; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'rating-btn' + (i <= saved ? ' active' : '');
+      btn.textContent = i;
+      btn.onclick = function(e) {
+        e.stopPropagation();
+        const newVal = (saved === i && i === parseInt(btn.textContent)) ? 0 : i;
+        saveRating(name, newVal);
+        updateRatingRow(row, name, newVal);
+      };
+      row.appendChild(btn);
+    }
+
+    const valEl = document.createElement('span');
+    valEl.className = 'rating-val' + (saved ? ' show' : '');
+    valEl.textContent = saved ? saved + '/10' : '';
+    row.appendChild(valEl);
+
+    body.appendChild(row);
+  });
+}
+
+function updateRatingRow(row, name, val) {
+  const btns = row.querySelectorAll('.rating-btn');
+  btns.forEach(function(btn, i) {
+    btn.className = 'rating-btn' + ((i+1) <= val ? ' active' : '');
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      const newVal = val === (i+1) ? 0 : (i+1);
+      saveRating(name, newVal);
+      updateRatingRow(row, name, newVal);
+    };
+  });
+  const valEl = row.querySelector('.rating-val');
+  if (valEl) { valEl.textContent = val ? val+'/10' : ''; valEl.className = 'rating-val' + (val ? ' show' : ''); }
+}
+
+initRatings();
+</script>
+</body>
+</html>
